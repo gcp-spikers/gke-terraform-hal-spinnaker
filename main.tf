@@ -4,10 +4,6 @@ provider "google" {
   zone    = "${var.zone}"
 }
 
-data "google_service_account" "terraform" {
-  account_id = "${var.service_account}"
-}
-
 # Need to enable serviceusage API manully on the console first
 # https://console.developers.google.com/apis/library/serviceusage.googleapis.com
 resource "google_project_services" "myproject" {

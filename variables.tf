@@ -10,10 +10,6 @@ variable "gcs_location" {
   default = "Asia"
 }
 
-variable "service_account" {
-  default = "terraform"
-}
-
 variable "cluster_name" {
   default     = "spinnaker"
   description = "GKE cluster name"
@@ -30,6 +26,6 @@ variable "node_type" {
 }
 
 variable "spinnaker_version" {
-  default = "1.8.5"
+  default     = "1.8.5"
   description = "Spinnaker Version (hal version list)"
 }
