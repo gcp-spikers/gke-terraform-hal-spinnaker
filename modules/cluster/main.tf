@@ -46,4 +46,3 @@ resource "null_resource" "gcloud_config" {
     command = "${data.template_file.gcloud_config.rendered}"
   }
 }
-

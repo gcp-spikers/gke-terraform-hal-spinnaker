@@ -1,11 +1,7 @@
-# Terraforming steps from https://cloud.google.com/solutions/continuous-delivery-spinnaker-kubernetes-engine
-
 provider "google" {
   version = "~> 1.16"
   project = "${var.project}"
   zone    = "${var.zone}"
-
-  #credentials = "${file(var.credential)}"
 }
 
 data "google_service_account" "terraform" {
