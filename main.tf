@@ -4,8 +4,7 @@ provider "google" {
   zone    = "${var.zone}"
 }
 
-# Need to enable serviceusage API manully on the console first
-# https://console.developers.google.com/apis/library/serviceusage.googleapis.com
+# Enable API's for the project
 resource "google_project_services" "myproject" {
   disable_on_destroy = false
 
@@ -41,11 +40,10 @@ module "gke_cluster" {
   zone               = "${var.zone}"
   tags               = ["spinnaker"]
 
-  ## Project id is added as tag to create dependency between project services (above commands) and cluster creation
+  ## Generated Project id is used here to create dependency between project services resource and cluster creation
   project = "${google_project_services.myproject.id}"
 }
 
-# k8s provider is used for installing helm
 provider "kubernetes" {
   load_config_file       = false
   version                = "~> 1.1"
