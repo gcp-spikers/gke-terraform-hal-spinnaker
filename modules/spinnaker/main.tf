@@ -87,7 +87,7 @@ resource "google_storage_bucket" "spinnaker_config" {
 
   name          = "${var.project}-spinnaker-config"
   location      = "${var.gcs_location}"
-  storage_class = "NEARLINE"
+  storage_class = "${var.gcs_storage_class}"
   force_destroy = "true"
 }
 

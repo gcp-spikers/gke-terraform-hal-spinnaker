@@ -8,7 +8,7 @@
     * [kubectl](https://cloud.google.com/kubernetes-engine/docs/quickstart) (`gcloud components install kubectl`)
     * [terraform](https://www.terraform.io/intro/getting-started/install.html)
     * [halyard](https://www.spinnaker.io/setup/install/halyard/)
-    
+ 
 ### Variables
 * `project`: The ID of the GCP project
 * `zone`: [Compute engine zone](https://cloud.google.com/compute/docs/regions-zones/) where GKE cluster needs to be created 
@@ -34,11 +34,28 @@
     gcloud iam service-accounts keys create account.json --iam-account $SA_EMAIL
     ```
     Above command will download the key and store it in `account.json` file
-    
-3.  Grant owner role to terraform service account    
+
+3.  Grant owner role to terraform service account
     ```
     gcloud projects add-iam-policy-binding $PROJECT --member serviceAccount:${SA_EMAIL} --role roles/owner
     ```
+		Alternatively you could try to have the minimum role requirements:
+		```
+		roles/serviceusage.serviceUsageAdmin 
+		roles/compute.instanceAdmin.v1
+		roles/container.admin
+    roles/storage.admin
+		roles/
+iam.serviceAccountAdmin
+    roles/
+iam.serviceAccountKeyAdmin
+    roles/
+iam.serviceAccountUser
+    roles/
+resourcemanager.projectIamAdmin
+		```
+
+		
     
 4.  Setup google authentication. For more info refer this [guide](https://cloud.google.com/docs/authentication/production#obtaining_and_providing_service_account_credentials_manually)
     ```

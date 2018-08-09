@@ -58,6 +58,7 @@ provider "kubernetes" {
 module "spinnaker" {
   source            = "modules/spinnaker"
   gcs_location      = "${var.gcs_location}"
+  gcs_storage_class = "${var.gcs_storage_class}"
   project           = "${var.project}"
   spinnaker_version = "${var.spinnaker_version}"
   cluster_name      = "${module.gke_cluster.id}"

@@ -9,7 +9,9 @@ variable "project" {
 variable "gcs_location" {
   description = "GCS bucket location"
 }
-
+variable "gcs_storage_class" {
+  description = "Storage Class of the spinnaker config bucket."
+}
 variable "spinnaker_version" {
   default     = "1.8.5"
   description = "Spinnaker version (hal version list)"

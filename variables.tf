@@ -7,7 +7,12 @@ variable "zone" {
 }
 
 variable "gcs_location" {
-  default = "Asia"
+  default = "asia"
+}
+
+variable "gcs_storage_class" {
+  description = "Storage Class of the spinnaker config bucket."
+  default = "MULTI-REGIONAL"
 }
 
 variable "cluster_name" {
