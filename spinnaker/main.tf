@@ -1,69 +1,36 @@
 provider "google" {
   version = "~> 1.16"
   project = "${var.project}"
-  zone    = "${var.zone}"
 }
 
-# Enable API's for the project
-resource "google_project_services" "myproject" {
-  disable_on_destroy = false
-
-  services = [
-    "serviceusage.googleapis.com",
-    "iam.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "pubsub.googleapis.com",
-    "logging.googleapis.com",
-    "monitoring.googleapis.com",
-    "storage-api.googleapis.com",
-    "storage-component.googleapis.com",
-    "container.googleapis.com",
-    "oslogin.googleapis.com",
-    "containerregistry.googleapis.com",
-    "compute.googleapis.com",
-    "deploymentmanager.googleapis.com",
-    "replicapool.googleapis.com",
-    "replicapoolupdater.googleapis.com",
-    "resourceviews.googleapis.com",
-    "cloudbuild.googleapis.com",
-    "sourcerepo.googleapis.com",
-    "bigquery-json.googleapis.com",
-  ]
+# Create GCS bucket
+resource "google_storage_bucket" "spinnaker_config" {
+  name          = "${var.project}-spinnaker-config"
+  location      = "${var.gcs_location}"
+  storage_class = "${var.gcs_class_storage}"
+  force_destroy = "false"
 }
 
-# Create GKE cluster
-module "gke_cluster" {
-  source             = "modules/cluster"
-  name               = "${var.cluster_name}"
-  initial_node_count = "${var.cluster_nodes_count}"
-  machine_type       = "${var.node_type}"
-  zone               = "${var.zone}"
-  tags               = ["spinnaker"]
-
-  ## Generated Project id is used here to create dependency between project services resource and cluster creation
-  project = "${google_project_services.myproject.id}"
-}
-
-provider "kubernetes" {
-  load_config_file       = false
-  version                = "~> 1.1"
-  host                   = "${module.gke_cluster.host}"
-  username               = "${module.gke_cluster.username}"
-  password               = "${module.gke_cluster.password}"
-  client_certificate     = "${module.gke_cluster.client_certificate}"
-  client_key             = "${module.gke_cluster.client_key}"
-  cluster_ca_certificate = "${module.gke_cluster.cluster_ca_certificate}"
-}
-
-module "spinnaker" {
-  source            = "modules/spinnaker"
-  gcs_location      = "${var.gcs_location}"
-  gcs_storage_class = "${var.gcs_storage_class}"
-  project           = "${var.project}"
-  spinnaker_version = "${var.spinnaker_version}"
-  cluster_name      = "${module.gke_cluster.id}"
-
+# Create service account for spinnaker
+resource "google_service_account" "spinnaker" {
   depends_on = [
-    "${module.gke_cluster.gcloud_config_id}",
+    "google_storage_bucket.spinnaker_config",
   ]
+
+  account_id   = "${var.spinnaker_sa}"
+  display_name = "${var.spinnaker_sa}"
+}
+
+# Grant storage admin to spinnaker service account
+resource "google_project_iam_binding" "spinnaker" {
+  role = "roles/storage.admin"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker.email}",
+  ]
+}
+
+# Generate key for spinnaker GCS service account
+resource "google_service_account_key" "spinnaker" {
+  service_account_id = "${google_service_account.spinnaker.name}"
 }
