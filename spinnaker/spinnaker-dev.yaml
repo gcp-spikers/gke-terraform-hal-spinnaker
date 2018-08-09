@@ -1,0 +1,30 @@
+---
+# Spinnaker Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spinnaker
+  labels:
+    name: spinnaker
+---
+# Spinnaker Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spinnaker-service-account
+  labels:
+    name: spinnaker
+---
+# Spinnaker RBAC for spinnaker namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spinnaker-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: spinnaker-service-account
+  namespace: spinnaker
