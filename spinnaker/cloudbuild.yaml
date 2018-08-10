@@ -7,7 +7,6 @@ steps:
   env:
     - 'KUBECONFIG=/kube/config'
   args:
-   - 'gcloud'
    - 'container'
    - 'clusters'
    - 'get-credentials'
