@@ -3,6 +3,13 @@ provider "google" {
   project = "${var.project}"
 }
 
+terraform {
+  backend "gcs" {
+    bucket  = "terraform-remote-state-afd9626fd"
+    prefix  = "spinnaker-dev"
+  }
+}
+
 # Create GCS bucket
 resource "google_storage_bucket" "spinnaker_config" {
   name          = "${var.project}-spinnaker-config"
