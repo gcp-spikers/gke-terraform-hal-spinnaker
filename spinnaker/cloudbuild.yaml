@@ -1,32 +1,35 @@
+substitutions:
+    _CLOUDSDK_COMPUTE_ZONE: australia-southeast1-a
+    _CLOUDSDK_CONTAINER_CLUSTER: ea-base-gke
 steps:
 # Generate a kubeconfig file for the given GKE cluster.
 - name: 'gcr.io/cloud-builders/kubectl'
-  dir: 'spinnaker'
   env:
-    - 'CLOUDSDK_COMPUTE_ZONE=australia-southeast1-a'
-    - 'CLOUDSDK_CONTAINER_CLUSTER=ea-base-gke'
     - 'KUBECONFIG=/kube/config'
-  entrypoint: 'sh'
   args:
-    - '-c'
-    - |
-      gcloud container clusters get-credentials $CLOUDSDK_CONTAINER_CLUSTER --zone $CLOUDSDK_COMPUTE_ZONE
+   - 'gcloud'
+   - 'container'
+   - 'clusters'
+   - 'get-credentials'
+   - '${_CLOUDSDK_CONTAINER_CLUSTER}'
+   - '--zone'
+   - '${_CLOUDSDK_COMPUTE_ZONE}'
   volumes:
     - name: 'kube'
       path: /kube
 - name: 'hashicorp/terraform:light'
-  dir: 'spinnaker'
   env:
     - 'KUBECONFIG=/kube/config'
+  dir: 'spinnaker'
   args:
-    - 'init'
+  - 'init'
   volumes:
     - name: 'kube'
       path: /kube
 - name: 'hashicorp/terraform:light'
-  dir: 'spinnaker'
   env:
     - 'KUBECONFIG=/kube/config'
+  dir: 'spinnaker'
   args: ['plan', '-out', 'spinnaker.plan','-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
   volumes:
     - name: 'kube'
