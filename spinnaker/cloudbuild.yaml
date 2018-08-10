@@ -10,11 +10,10 @@ steps:
   dir: 'spinnaker'
   args: ['apply', '-auto-approve', 'spinnaker.plan']
 - name: 'gcr.io/cloud-builders/kubectl'
-  dir: 'spinnaker'
   args:
     - 'apply'
     - '-f'
-    - 'init-spinnaker-manifest.yaml'
+    - './init-spinnaker-manifest.yaml'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=australia-southeast1-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=ea-base-gke'
