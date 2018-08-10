@@ -9,7 +9,16 @@ steps:
 - name: 'hashicorp/terraform:light'
   dir: 'spinnaker'
   args: ['apply', '-auto-approve', 'spinnaker.plan']
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: 'sh'
+  dir: 'spinnaker'
+  args:
+    - -c
+    - |
+      pwd
+      ls -al
 - name: 'gcr.io/cloud-builders/kubectl'
+  dir: 'spinnaker'
   args: 
   - 'apply'
   - '-f'
