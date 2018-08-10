@@ -6,6 +6,8 @@ steps:
 - name: 'gcr.io/cloud-builders/kubectl'
   env:
     - 'KUBECONFIG=/kube/config'
+    - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_CONTAINER_CLUSTER}'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
   args:
    - 'gcloud'
    - 'container'
