@@ -1,3 +1,6 @@
+substitutions:
+    _CLOUDSDK_COMPUTE_ZONE: australia-southeast1-a
+    _CLOUDSDK_CONTAINER_CLUSTER: ea-base-gke
 steps:
 - name: 'hashicorp/terraform:light'
   dir: 'spinnaker'
@@ -11,10 +14,24 @@ steps:
   args: ['apply', '-auto-approve', 'spinnaker.plan']
 - name: 'gcr.io/cloud-builders/kubectl'
   dir: 'spinnaker'
-  args: 
+  args:
   - 'apply'
   - '-f'
   - 'init-spinnaker-manifest.yaml'
   env:
-  - 'CLOUDSDK_COMPUTE_ZONE=australia-southeast1-a'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=ea-base-gke'
+  - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+# Generate a kubeconfig file for the given GKE cluster to be used by HAL
+- name: 'gcr.io/cloud-builders/gcloud'
+  env:
+    - 'KUBECONFIG=/kube/config'
+  args:
+   - 'container'
+   - 'clusters'
+   - 'get-credentials'
+   - '${_CLOUDSDK_CONTAINER_CLUSTER}'
+   - '--zone'
+   - '${_CLOUDSDK_COMPUTE_ZONE}'
+  volumes:
+    - name: 'kube'
+      path: /kube
