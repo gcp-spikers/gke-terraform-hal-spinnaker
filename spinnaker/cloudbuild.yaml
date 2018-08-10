@@ -49,4 +49,4 @@ steps:
 #       path: /kube
 - name: 'hashicorp/terraform:light'
   dir: 'spinnaker'
-  args: ['destroy', '-auto-approve']
+  args: ['destroy', '-auto-approve', '-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
