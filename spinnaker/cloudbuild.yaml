@@ -35,18 +35,18 @@ steps:
   volumes:
     - name: 'kube'
       path: /kube
-- name: 'gcr.io/spinnaker-marketplace/halyard:stable'
-  env:
-    - 'KUBECONFIG=/kube/config'
-  dir: 'spinnaker'
-  args:
-    - 'config'
-    - 'provider'
-    - 'kubernetes'
-    - 'enable'
-  volumes:
-    - name: 'kube'
-      path: /kube
+# - name: 'gcr.io/spinnaker-marketplace/halyard:stable'
+#   env:
+#     - 'KUBECONFIG=/kube/config'
+#   dir: 'spinnaker'
+#   args:
+#     - 'config'
+#     - 'provider'
+#     - 'kubernetes'
+#     - 'enable'
+#   volumes:
+#     - name: 'kube'
+#       path: /kube
 - name: 'hashicorp/terraform:light'
   dir: 'spinnaker'
   args: ['destroy', '-auto-approve']
