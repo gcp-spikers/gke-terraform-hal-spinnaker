@@ -10,12 +10,10 @@ steps:
   dir: 'spinnaker'
   args: ['apply', '-auto-approve', 'spinnaker.plan']
 - name: 'gcr.io/cloud-builders/kubectl'
-  entrypoint: 'sh'
-  args:
-    - pwd
-      ls -al
-
-      kubectl apply -f init-spinnaker-manifest.yaml
+  args: 
+  - 'apply'
+  - '-f'
+  - 'init-spinnaker-manifest.yaml'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=australia-southeast1-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=ea-base-gke'
