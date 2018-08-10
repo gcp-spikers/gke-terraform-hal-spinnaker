@@ -1,13 +1,18 @@
-provider "google" {
-  version = "~> 1.16"
-  project = "${var.project}"
-}
-
 terraform {
   backend "gcs" {
     bucket  = "terraform-remote-state-afd9626fd"
     prefix  = "spinnaker-dev"
   }
+}
+
+provider "google" {
+  version = "~> 1.16"
+  project = "${var.project}"
+}
+
+# k8s provider is used for installing helm
+provider "kubernetes" {
+  load_config_file = true
 }
 
 # Create GCS bucket
@@ -41,3 +46,4 @@ resource "google_storage_bucket_acl" "spinnaker-bucket-acl" {
 resource "google_service_account_key" "spinnaker" {
   service_account_id = "${google_service_account.spinnaker.name}"
 }
+
