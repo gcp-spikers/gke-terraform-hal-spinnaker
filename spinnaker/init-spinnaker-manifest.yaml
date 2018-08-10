@@ -12,6 +12,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: spinnaker-service-account
+  namespace: spinnaker
   labels:
     name: spinnaker
 ---
