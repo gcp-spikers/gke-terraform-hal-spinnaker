@@ -3,8 +3,8 @@ steps:
   args: ['init']
   dir: 'spinnaker'
 - name: 'hashicorp/terraform:light'
-  args: ['plan', '-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
+  args: ['plan', '-out', 'spinnaker.plan','-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
   dir: 'spinnaker'
 - name: 'hashicorp/terraform:light'
-  args: ['apply', '-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"', '-auto-approve']
+  args: ['apply', 'spinnaker.plan', '-auto-approve']
   dir: 'spinnaker'
