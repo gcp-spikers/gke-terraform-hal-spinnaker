@@ -33,7 +33,7 @@ resource "google_storage_bucket_acl" "spinnaker-bucket-acl" {
   bucket = "${google_storage_bucket.spinnaker_config.name}"
 
   role_entity = [
-    "OWNER:serviceAccount-${google_service_account.spinnaker.email}"
+    "OWNER:user-${google_service_account.spinnaker.email}"
   ]
 }
 
