@@ -28,12 +28,12 @@ resource "google_service_account" "spinnaker" {
   display_name = "${var.spinnaker_sa}"
 }
 
-# Grant storage admin to spinnaker service account
-resource "google_project_iam_binding" "spinnaker" {
-  role = "roles/storage.admin"
+# Grant spinnaker service account OWNER of spinnaker config bucket
+resource "google_storage_bucket_acl" "spinnaker-bucket-acl" {
+  bucket = "${google_storage_bucket.spinnaker_config.name}"
 
-  members = [
-    "serviceAccount:${google_service_account.spinnaker.email}",
+  role_entity = [
+    "OWNER:serviceAccount-${google_service_account.spinnaker.email}"
   ]
 }
 
