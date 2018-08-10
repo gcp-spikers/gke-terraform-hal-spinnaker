@@ -3,25 +3,17 @@ substitutions:
     _CLOUDSDK_CONTAINER_CLUSTER: ea-base-gke
 steps:
 # Generate a kubeconfig file for the given GKE cluster.
-- name: 'gcr.io/cloud-builders/kubectl'
+- name: 'gcr.io/cloud-builders/gcloud'
   env:
     - 'KUBECONFIG=/kube/config'
-    - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
-    - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
-  entrypoint: sh
   args:
-    - '-c'
-    - |
-    gcloud container clusters get-credentials ${_CLOUDSDK_CONTAINER_CLUSTER} \
-    --zone ${_CLOUDSDK_COMPUTE_ZONE}
-  # args:
-  #  - 'gcloud'
-  #  - 'container'
-  #  - 'clusters'
-  #  - 'get-credentials'
-  #  - '${_CLOUDSDK_CONTAINER_CLUSTER}'
-  #  - '--zone'
-  #  - '${_CLOUDSDK_COMPUTE_ZONE}'
+   - 'gcloud'
+   - 'container'
+   - 'clusters'
+   - 'get-credentials'
+   - '${_CLOUDSDK_CONTAINER_CLUSTER}'
+   - '--zone'
+   - '${_CLOUDSDK_COMPUTE_ZONE}'
   volumes:
     - name: 'kube'
       path: /kube
