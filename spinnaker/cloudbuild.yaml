@@ -1,14 +1,16 @@
 steps:
 - name: 'hashicorp/terraform:light'
-  args: ['init']
   dir: 'spinnaker'
+  args:
+  - 'init'
 - name: 'hashicorp/terraform:light'
+  dir: 'spinnaker'
   args: ['plan', '-out', 'spinnaker.plan','-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
-  dir: 'spinnaker'
 - name: 'hashicorp/terraform:light'
-  args: ['apply', '-auto-approve', 'spinnaker.plan']
   dir: 'spinnaker'
+  args: ['apply', '-auto-approve', 'spinnaker.plan']
 - name: 'gcr.io/cloud-builders/kubectl'
+  dir: 'spinnaker'
   args:
     - 'apply'
     - '-f'
