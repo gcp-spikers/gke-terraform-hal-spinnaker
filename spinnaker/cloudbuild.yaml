@@ -32,21 +32,18 @@ steps:
    - '${_CLOUDSDK_CONTAINER_CLUSTER}'
    - '--zone'
    - '${_CLOUDSDK_COMPUTE_ZONE}'
-  # volumes:
-  #   - name: 'kube'
-  #     path: /kube
-# - name: 'gcr.io/spinnaker-marketplace/halyard:stable'
-#   env:
-#     - 'KUBECONFIG=/kube/config'
-#   dir: 'spinnaker'
-#   args:
-#     - 'config'
-#     - 'provider'
-#     - 'kubernetes'
-#     - 'enable'
-#   volumes:
-#     - name: 'kube'
-#       path: /kube
-- name: 'hashicorp/terraform:light'
+  volumes:
+    - name: 'kube'
+      path: /kube
+- name: 'gcr.io/spinnaker-marketplace/halyard:stable'
+  env:
+    - 'KUBECONFIG=/kube/config'
   dir: 'spinnaker'
-  args: ['destroy', '-auto-approve', '-var', 'project=$PROJECT_ID', -var, 'gcs_location="australia-southeast1"', '-var', 'gcs_class_storage="REGIONAL"']
+  args:
+    - 'config'
+    - 'provider'
+    - 'kubernetes'
+    - 'enable'
+  volumes:
+    - name: 'kube'
+      path: /kube
