@@ -1,5 +1,5 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   dir: 'hal-cloud-builder'
-  args: ['build', '--tag=gcr.io/$PROJECT_ID/tf-hal', '.']
-images: ['gcr.io/$PROJECT_ID/tf-hal']
+  args: ['build', '--tag=gcr.io/$PROJECT_ID/tf-hal:latest', '.']
+images: ['gcr.io/$PROJECT_ID/tf-hal:latest']
