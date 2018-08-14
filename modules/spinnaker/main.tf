@@ -112,6 +112,10 @@ resource "google_project_iam_binding" "spinnaker_gcs" {
 
 # Generate key for spinnaker GCS service account
 resource "google_service_account_key" "spinnaker_gcs" {
+  depends_on = [
+    "google_project_iam_binding.spinnaker_gcs"
+  ]
+
   service_account_id = "${google_service_account.spinnaker_gcs.name}"
 }
 

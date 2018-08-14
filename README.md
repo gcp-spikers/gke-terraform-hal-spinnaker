@@ -1,5 +1,7 @@
 # Install spinnaker in GKE using terraform and hal
 
+# !!! Outdated, Needs to be updated !!! 
+
 ### Prerequisite 
 
 * Runs only on Linux or Mac

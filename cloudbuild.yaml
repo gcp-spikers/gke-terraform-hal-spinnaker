@@ -1,0 +1,39 @@
+steps:
+- name: gcr.io/cloud-builders/gcloud
+  args:
+  - info
+- name: gcr.io/cloud-builders/gcloud
+  args:
+  - auth 
+  - list
+#- name: gcr.io/cloud-builders/gcloud
+#  args:
+#  - kms 
+#  - decrypt 
+#  - --ciphertext-file=${_ENC_FILE_NAME} 
+#  - --plaintext-file=${_PLAIN_FILE_NAME} 
+#  - --location=${_KEY_LOCATION} 
+#  - --keyring=${_KEYRING_NAME} 
+#  - --key=${_KEY_NAME}
+- name: 'gcr.io/hal-spinnaker/tf-hal'
+  entrypoint: 'bash'
+  env:
+  - 'HOME=/root'
+#  - 'GOOGLE_APPLICATION_CREDENTIALS=${_PLAIN_FILE_NAME}'
+  args: 
+  - '-c'
+  - |
+    pwd
+    ls -al
+    ls -al /builder/home
+    env | sort
+    set -exo pipefail
+    terraform init -backend-config='bucket=terraform-190393331717' -input=false
+    terraform plan -out terraform.plan -var 'project=${PROJECT_ID}'
+    terraform apply terraform.plan
+#substitutions:
+#  _KEYRING_NAME: cloudbuild-keyring
+#  _KEY_NAME: cloudbuild-key
+#  _KEY_LOCATION: global
+#  _ENC_FILE_NAME: /workspace/account.json.enc
+#  _PLAIN_FILE_NAME: /workspace/account-json

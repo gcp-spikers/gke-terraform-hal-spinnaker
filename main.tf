@@ -4,6 +4,12 @@ provider "google" {
   zone    = "${var.zone}"
 }
 
+terraform {
+  backend "gcs" {
+    bucket = "terraform-190393331717"
+  }
+}
+
 # Enable API's for the project
 resource "google_project_services" "myproject" {
   disable_on_destroy = false
@@ -28,6 +34,8 @@ resource "google_project_services" "myproject" {
     "cloudbuild.googleapis.com",
     "sourcerepo.googleapis.com",
     "bigquery-json.googleapis.com",
+    "cloudkms.googleapis.com",
+    "servicemanagement.googleapis.com"
   ]
 }
 
