@@ -91,7 +91,7 @@ resource "google_storage_bucket" "spinnaker_config" {
   force_destroy = "true"
 }
 
-# Create service account for spinner storage
+# Create service account for spinner storage on gcs
 resource "google_service_account" "spinnaker_gcs" {
   depends_on = [
     "google_storage_bucket.spinnaker_config",
@@ -101,7 +101,7 @@ resource "google_service_account" "spinnaker_gcs" {
   display_name = "${var.spinnaker_gcs_sa}"
 }
 
-# Grant storage admin to spinnaker GCS service account
+# Grant storage admin to spinnaker GCS service account (needs to be revised, ACL is more preferred)
 resource "google_project_iam_binding" "spinnaker_gcs" {
   role = "roles/storage.admin"
 
@@ -113,27 +113,71 @@ resource "google_project_iam_binding" "spinnaker_gcs" {
 # Generate key for spinnaker GCS service account
 resource "google_service_account_key" "spinnaker_gcs" {
   depends_on = [
-    "google_project_iam_binding.spinnaker_gcs"
+    "google_project_iam_binding.spinnaker_gcs",
   ]
 
   service_account_id = "${google_service_account.spinnaker_gcs.name}"
 }
 
-data "template_file" "deploy_spinnaker" {
+# Create service account for GCR
+resource "google_service_account" "spinnaker_gcr" {
   depends_on = [
     "google_service_account_key.spinnaker_gcs",
   ]
 
+  account_id   = "${var.spinnaker_gcr_sa}"
+  display_name = "${var.spinnaker_gcr_sa}"
+}
+
+# Grant repo browser and storage admin to GCR (needs to be revised, ACL is more preferred)
+resource "google_project_iam_binding" "spinnaker_gcr_storageadmin" {
+  role = "roles/storage.admin"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker_gcr.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "spinnaker_gcr_browser" {
+  depends_on = [
+    "google_project_iam_binding.spinnaker_gcr_storageadmin",
+  ]
+
+  role = "roles/browser"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker_gcr.email}",
+  ]
+}
+
+# Generate key for spinnaker GCR service account
+resource "google_service_account_key" "spinnaker_gcr" {
+  depends_on = [
+    "google_project_iam_binding.spinnaker_gcr_browser",
+  ]
+
+  service_account_id = "${google_service_account.spinnaker_gcr.name}"
+}
+
+data "template_file" "deploy_spinnaker" {
+  depends_on = [
+    "google_service_account_key.spinnaker_gcr",
+  ]
+
   template = <<EOF
 set -ex \
-&& GCS_KEY_FILE=~/.hal/.$${bucket}.key \
-&& echo '$${gcs_json_key}' | base64 --decode > $GCS_KEY_FILE \
+&& GCS_ACCOUNT_JSON_FILE=~/.hal/.gcs-account.json \
+&& GCR_ACCOUNT_JSON_FILE=~/.hal/.gcr-account.json \
+&& echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
+&& echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
 && hal -q config provider kubernetes enable \
 && hal -q config provider kubernetes account delete my-k8s-v2-account || true \
 && hal -q config provider kubernetes account add my-k8s-v2-account --provider-version v2 --context $(kubectl config current-context) \
 && hal -q config features edit --artifacts true \
 && hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
-&& hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_KEY_FILE --bucket $${bucket} \
+&& hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
+&& hal -q config provider docker-registry enable \
+&& hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
 && hal -q config storage edit --type gcs \
 && hal -q config version edit --version $${spinnaker_version} \
 && hal -q deploy apply
@@ -143,14 +187,15 @@ EOF
     project           = "${var.project}"
     gcs_location      = "${var.gcs_location}"
     bucket            = "${google_storage_bucket.spinnaker_config.name}"
-    gcs_json_key      = "${google_service_account_key.spinnaker_gcs.private_key}"
+    gcs_account_json  = "${google_service_account_key.spinnaker_gcs.private_key}"
+    gcr_account_json  = "${google_service_account_key.spinnaker_gcr.private_key}"
     spinnaker_version = "${var.spinnaker_version}"
   }
 }
 
 resource "null_resource" "deploy_spinnaker" {
   depends_on = [
-    "google_service_account_key.spinnaker_gcs",
+    "google_service_account_key.spinnaker_gcr",
   ]
 
   provisioner "local-exec" {

@@ -3,9 +3,18 @@ steps:
   entrypoint: 'bash'
   env:
   - 'HOME=/root'
+  volumes:
+  - name: 'home_dir'
+    path: '/root'
   args:
   - '-c'
   - |
     terraform init -backend-config='bucket=terraform-190393331717' -input=false
     terraform plan -out terraform.plan -var 'project=${PROJECT_ID}'
     terraform apply terraform.plan
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: ['cp', '-r', '/root', 'gs://terraform-190393331717/tf-hal-home-dir' ]
+  volumes:
+  - name: 'home_dir'
+    path: '/root'
+

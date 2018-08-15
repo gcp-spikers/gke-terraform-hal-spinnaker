@@ -20,6 +20,11 @@ variable "spinnaker_gcs_sa" {
   description = "GCP service account for Spinnnaker storage access. Default to 'spinnaker-gcs-sa'"
 }
 
+variable "spinnaker_gcr_sa" {
+  default     = "spinnaker-gcr-sa"
+  description = "GCP service account for GCR access. Default to 'spinnaker-gcr-sa'"
+}
+
 variable "spinnaker_k8s_namespace" {
   default     = "spinnaker"
   description = "Spinnaker namespace. Default to 'spinnaker'"
