@@ -99,15 +99,17 @@ set -ex \
 && GCR_ACCOUNT_JSON_FILE=/tmp/.gcr-account.json \
 && echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
 && echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
+&& hal -q config provider docker-registry enable \
+&& hal -q config provider docker-registry account delete my-gcr-registry || true \
+&& hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
 && hal -q config provider kubernetes enable \
 && hal -q config provider kubernetes account delete my-k8s-v2-account || true \
-&& hal -q config provider kubernetes account add my-k8s-v2-account --provider-version v2 --context $(kubectl config current-context) \
+&& hal -q config provider kubernetes account add my-k8s-v2-account  --provider-version v2 \
+                                                                    --context $(kubectl config current-context) \
+                                                                    --omit-namespaces kube-system spinnaker kube-public \
 && hal -q config features edit --artifacts true \
 && hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
-&& hal -q config provider docker-registry enable \
-&& hal -q config provider docker-registry account delete my-gcr-account || true \
-&& hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
 && hal -q config storage edit --type gcs \
 && hal -q config version edit --version $${spinnaker_version} \
 && hal -q deploy apply
@@ -131,6 +133,10 @@ resource "null_resource" "deploy_spinnaker" {
   depends_on = [
     "google_service_account_key.spinnaker_gcr",
   ]
+
+  triggers {
+    cksum = "${sha256(data.template_file.deploy_spinnaker.rendered)}"
+  }
 
   provisioner "local-exec" {
     command = "${data.template_file.deploy_spinnaker.rendered}"
