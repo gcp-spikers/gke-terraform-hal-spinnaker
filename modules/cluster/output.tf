@@ -14,10 +14,6 @@ output "id" {
   value = "${google_container_cluster.primary.id}"
 }
 
-output "gcloud_config_id" {
-  value = "${null_resource.gcloud_config.id}"
-}
-
 output "endpoint" {
   value = "${google_container_cluster.primary.endpoint}"
 }

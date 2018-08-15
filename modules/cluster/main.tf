@@ -27,23 +27,3 @@ resource "google_container_cluster" "primary" {
     }
   }
 }
-
-data "template_file" "gcloud_config" {
-  template = <<EOF
-set -ex \
-&& gcloud container clusters --zone=$${zone} --project=$${project} get-credentials $${cluster_name} \
-&& kubectl version
-EOF
-
-  vars {
-    project      = "${var.project}"
-    zone         = "${var.zone}"
-    cluster_name = "${google_container_cluster.primary.id}"
-  }
-}
-
-resource "null_resource" "gcloud_config" {
-  provisioner "local-exec" {
-    command = "${data.template_file.gcloud_config.rendered}"
-  }
-}

@@ -40,3 +40,7 @@ variable "depends_on" {
   type        = "list"
   description = "Hack for expressing module to module dependency"
 }
+
+variable "zone" {
+  default = "asia-southeast1-b"
+}

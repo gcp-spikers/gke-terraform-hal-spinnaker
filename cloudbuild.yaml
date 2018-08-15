@@ -1,20 +1,23 @@
+timeout: 900s
+
 steps:
 - name: 'gcr.io/hal-spinnaker/tf-hal'
   entrypoint: 'bash'
   env:
   - 'HOME=/root'
   volumes:
-  - name: 'home_dir'
-    path: '/root'
+  - name: 'dot_hal_dir'
+    path: '/home/hal/.hal'
   args:
   - '-c'
   - |
+    set -ex
     terraform init -backend-config='bucket=terraform-190393331717' -input=false
     terraform plan -out terraform.plan -var 'project=${PROJECT_ID}'
     terraform apply terraform.plan
 - name: 'gcr.io/cloud-builders/gsutil'
-  args: ['cp', '-r', '/root', 'gs://terraform-190393331717/tf-hal-home-dir' ]
+  args: ['-m', 'cp', '-r', '/home/hal/.hal', 'gs://terraform-190393331717/dot_hal_dir' ]
   volumes:
-  - name: 'home_dir'
-    path: '/root'
+  - name: 'dot_hal_dir'
+    path: '/home/hal/.hal'
 

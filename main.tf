@@ -35,7 +35,7 @@ resource "google_project_services" "myproject" {
     "sourcerepo.googleapis.com",
     "bigquery-json.googleapis.com",
     "cloudkms.googleapis.com",
-    "servicemanagement.googleapis.com"
+    "servicemanagement.googleapis.com",
   ]
 }
 
@@ -69,8 +69,9 @@ module "spinnaker" {
   project           = "${var.project}"
   spinnaker_version = "${var.spinnaker_version}"
   cluster_name      = "${module.gke_cluster.id}"
+  zone              = "${var.zone}"
 
   depends_on = [
-    "${module.gke_cluster.gcloud_config_id}",
+    "${module.gke_cluster.id}",
   ]
 }

@@ -22,69 +22,8 @@ resource "kubernetes_service_account" "spinnaker" {
   }
 }
 
-# Grant cluster-admin role to spinnaker
-data "template_file" "grant_admin_to_spinnaker" {
-  template = <<EOF
-set -ex \
-&& kubectl create clusterrolebinding spinnaker-admin \
-      --clusterrole=cluster-admin \
-      --serviceaccount=$${namespace}:$${account}
-EOF
-
-  vars {
-    namespace = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
-    account   = "${kubernetes_service_account.spinnaker.metadata.0.name}"
-  }
-}
-
-resource "null_resource" "grant_admin_to_spinnaker" {
-  depends_on = [
-    "kubernetes_service_account.spinnaker",
-  ]
-
-  provisioner "local-exec" {
-    command = "${data.template_file.grant_admin_to_spinnaker.rendered}"
-  }
-}
-
-data "template_file" "kubectl_config" {
-  depends_on = [
-    "null_resource.grant_admin_to_spinnaker",
-  ]
-
-  template = <<EOF
-set -ex \
-&& CONTEXT=$(kubectl config current-context) \
-&& SECRET_NAME=$(kubectl get serviceaccount $${account} --namespace $${namespace} -o jsonpath='{.secrets[0].name}') \
-&& TOKEN=$(kubectl get secret --namespace $${namespace} $SECRET_NAME -o yaml  -o jsonpath='{.data.token}' | base64 --decode) \
-&& kubectl config set-credentials $CONTEXT-token-user --token $TOKEN \
-&& kubectl config set-context $CONTEXT --user $CONTEXT-token-user
-EOF
-
-  vars {
-    namespace = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
-    account   = "${kubernetes_service_account.spinnaker.metadata.0.name}"
-  }
-}
-
-# Configure kubectl to use spinnaker service account
-resource "null_resource" "kubectl_config" {
-  depends_on = [
-    "null_resource.grant_admin_to_spinnaker",
-  ]
-
-  provisioner "local-exec" {
-    command = "${data.template_file.kubectl_config.rendered}"
-  }
-}
-
 # Create GCS bucket
 resource "google_storage_bucket" "spinnaker_config" {
-  # Wait for kubectl to be configured
-  depends_on = [
-    "null_resource.kubectl_config",
-  ]
-
   name          = "${var.project}-spinnaker-config"
   location      = "${var.gcs_location}"
   storage_class = "NEARLINE"
@@ -93,56 +32,27 @@ resource "google_storage_bucket" "spinnaker_config" {
 
 # Create service account for spinner storage on gcs
 resource "google_service_account" "spinnaker_gcs" {
-  depends_on = [
-    "google_storage_bucket.spinnaker_config",
-  ]
-
   account_id   = "${var.spinnaker_gcs_sa}"
   display_name = "${var.spinnaker_gcs_sa}"
 }
 
-# Grant storage admin to spinnaker GCS service account (needs to be revised, ACL is more preferred)
-resource "google_project_iam_binding" "spinnaker_gcs" {
-  role = "roles/storage.admin"
-
-  members = [
-    "serviceAccount:${google_service_account.spinnaker_gcs.email}",
-  ]
-}
-
-# Generate key for spinnaker GCS service account
-resource "google_service_account_key" "spinnaker_gcs" {
-  depends_on = [
-    "google_project_iam_binding.spinnaker_gcs",
-  ]
-
-  service_account_id = "${google_service_account.spinnaker_gcs.name}"
-}
-
 # Create service account for GCR
 resource "google_service_account" "spinnaker_gcr" {
-  depends_on = [
-    "google_service_account_key.spinnaker_gcs",
-  ]
-
   account_id   = "${var.spinnaker_gcr_sa}"
   display_name = "${var.spinnaker_gcr_sa}"
 }
 
-# Grant repo browser and storage admin to GCR (needs to be revised, ACL is more preferred)
-resource "google_project_iam_binding" "spinnaker_gcr_storageadmin" {
+# Grant storage admin to spinnaker GCS service account (needs to be revised, ACL is more preferred)
+resource "google_project_iam_binding" "role_storage_admin" {
   role = "roles/storage.admin"
 
   members = [
+    "serviceAccount:${google_service_account.spinnaker_gcs.email}",
     "serviceAccount:${google_service_account.spinnaker_gcr.email}",
   ]
 }
 
-resource "google_project_iam_binding" "spinnaker_gcr_browser" {
-  depends_on = [
-    "google_project_iam_binding.spinnaker_gcr_storageadmin",
-  ]
-
+resource "google_project_iam_binding" "role_browser" {
   role = "roles/browser"
 
   members = [
@@ -150,10 +60,20 @@ resource "google_project_iam_binding" "spinnaker_gcr_browser" {
   ]
 }
 
+# Generate key for spinnaker GCS service account
+resource "google_service_account_key" "spinnaker_gcs" {
+  depends_on = [
+    "google_project_iam_binding.role_storage_admin",
+  ]
+
+  service_account_id = "${google_service_account.spinnaker_gcs.name}"
+}
+
 # Generate key for spinnaker GCR service account
 resource "google_service_account_key" "spinnaker_gcr" {
   depends_on = [
-    "google_project_iam_binding.spinnaker_gcr_browser",
+    "google_project_iam_binding.role_browser",
+    "google_project_iam_binding.role_storage_admin",
   ]
 
   service_account_id = "${google_service_account.spinnaker_gcr.name}"
@@ -161,13 +81,22 @@ resource "google_service_account_key" "spinnaker_gcr" {
 
 data "template_file" "deploy_spinnaker" {
   depends_on = [
+    "kubernetes_service_account.spinnaker",
     "google_service_account_key.spinnaker_gcr",
+    "google_service_account_key.spinnaker_gcs",
   ]
 
   template = <<EOF
 set -ex \
-&& GCS_ACCOUNT_JSON_FILE=~/.hal/.gcs-account.json \
-&& GCR_ACCOUNT_JSON_FILE=~/.hal/.gcr-account.json \
+&& gcloud container clusters --zone=$${zone} --project=$${project} get-credentials $${cluster_name} \
+&& kubectl create clusterrolebinding spinnaker-admin --clusterrole=cluster-admin --serviceaccount=$${k8s_namespace}:$${k8s_sa} || true \
+&& CONTEXT=$(kubectl config current-context) \
+&& SECRET_NAME=$(kubectl get serviceaccount $${k8s_sa} --namespace $${k8s_namespace} -o jsonpath='{.secrets[0].name}') \
+&& TOKEN=$(kubectl get secret --namespace $${k8s_namespace} $SECRET_NAME -o yaml  -o jsonpath='{.data.token}' | base64 --decode) \
+&& kubectl config set-credentials $CONTEXT-token-user --token $TOKEN \
+&& kubectl config set-context $CONTEXT --user $CONTEXT-token-user \
+&& GCS_ACCOUNT_JSON_FILE=/tmp/.gcs-account.json \
+&& GCR_ACCOUNT_JSON_FILE=/tmp/.gcr-account.json \
 && echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
 && echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
 && hal -q config provider kubernetes enable \
@@ -177,6 +106,7 @@ set -ex \
 && hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
 && hal -q config provider docker-registry enable \
+&& hal -q config provider docker-registry account delete my-gcr-account || true \
 && hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
 && hal -q config storage edit --type gcs \
 && hal -q config version edit --version $${spinnaker_version} \
@@ -184,6 +114,10 @@ set -ex \
 EOF
 
   vars {
+    k8s_namespace     = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
+    k8s_sa            = "${kubernetes_service_account.spinnaker.metadata.0.name}"
+    zone              = "${var.zone}"
+    cluster_name      = "${var.cluster_name}"
     project           = "${var.project}"
     gcs_location      = "${var.gcs_location}"
     bucket            = "${google_storage_bucket.spinnaker_config.name}"
