@@ -64,12 +64,11 @@ provider "kubernetes" {
 }
 
 module "spinnaker" {
-  source            = "modules/spinnaker"
-  gcs_location      = "${var.gcs_location}"
-  project           = "${var.project}"
-  spinnaker_version = "${var.spinnaker_version}"
-  cluster_name      = "${module.gke_cluster.id}"
-  zone              = "${var.zone}"
+  source       = "modules/spinnaker"
+  gcs_location = "${var.gcs_location}"
+  project      = "${var.project}"
+  cluster_name = "${module.gke_cluster.id}"
+  zone         = "${var.zone}"
 
   depends_on = [
     "${module.gke_cluster.id}",

@@ -99,6 +99,7 @@ set -ex \
 && GCR_ACCOUNT_JSON_FILE=/tmp/.gcr-account.json \
 && echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
 && echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
+&& update-halyard \
 && hal -q config provider docker-registry enable \
 && hal -q config provider docker-registry account delete my-gcr-registry || true \
 && hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
@@ -117,7 +118,7 @@ set -ex \
 && hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
 && hal -q config storage edit --type gcs \
-&& hal -q config version edit --version $${spinnaker_version} \
+&& hal -q config version edit --version $(hal version latest -q) \
 && hal -q deploy apply
 EOF
 
@@ -131,7 +132,6 @@ EOF
     bucket            = "${google_storage_bucket.spinnaker_config.name}"
     gcs_account_json  = "${google_service_account_key.spinnaker_gcs.private_key}"
     gcr_account_json  = "${google_service_account_key.spinnaker_gcr.private_key}"
-    spinnaker_version = "${var.spinnaker_version}"
   }
 }
 

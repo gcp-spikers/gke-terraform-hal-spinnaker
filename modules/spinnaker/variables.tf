@@ -10,11 +10,6 @@ variable "gcs_location" {
   description = "GCS bucket location"
 }
 
-variable "spinnaker_version" {
-  default     = "1.8.5"
-  description = "Spinnaker version (hal version list)"
-}
-
 variable "spinnaker_gcs_sa" {
   default     = "spinnaker-gcs-sa"
   description = "GCP service account for Spinnnaker storage access. Default to 'spinnaker-gcs-sa'"

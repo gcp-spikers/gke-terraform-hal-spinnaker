@@ -24,8 +24,3 @@ variable "node_type" {
   default     = "n1-standard-2"
   description = "VM Node type"
 }
-
-variable "spinnaker_version" {
-  default     = "1.8.5"
-  description = "Spinnaker Version (hal version list)"
-}
