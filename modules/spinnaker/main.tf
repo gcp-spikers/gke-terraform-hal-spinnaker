@@ -107,6 +107,12 @@ set -ex \
 && hal -q config provider kubernetes account add my-k8s-v2-account  --provider-version v2 \
                                                                     --context $(kubectl config current-context) \
                                                                     --omit-namespaces kube-system spinnaker kube-public \
+&& kubectl --namespace=default create secret docker-registry gcr-json-key \
+      --docker-server=gcr.io \
+      --docker-username=_json_key \
+      --docker-password="$(cat $GCR_ACCOUNT_JSON_FILE)" \
+      --docker-email=any@valid.email \
+&& kubectl --namespace=default patch serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}' || true \
 && hal -q config features edit --artifacts true \
 && hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
