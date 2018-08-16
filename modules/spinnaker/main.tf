@@ -99,7 +99,6 @@ set -ex \
 && GCR_ACCOUNT_JSON_FILE=/tmp/.gcr-account.json \
 && echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
 && echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
-&& update-halyard \
 && hal -q config provider docker-registry enable \
 && hal -q config provider docker-registry account delete my-gcr-registry || true \
 && hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
