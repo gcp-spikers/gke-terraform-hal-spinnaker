@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: 2018-08-19T12:21:54Z
+  generateName: helloworld-prod-v005-
+  labels:
+    app: helloworld
+    cluster: helloworld-prod
+    helloworld-prod-v005: "true"
+    load-balancer-helloworld-prod: "true"
+    replication-controller: helloworld-prod-v005
+    stack: prod
+    version: "5"
+  name: helloworld-prod-v005-kdwz6
+  namespace: default
+  ownerReferences:
+  - apiVersion: extensions/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: helloworld-prod-v005
+    uid: 755e4871-a3aa-11e8-a3e3-42010a94009a
+  resourceVersion: "179359"
+  selfLink: /api/v1/namespaces/default/pods/helloworld-prod-v005-kdwz6
+  uid: 7560557d-a3aa-11e8-a3e3-42010a94009a
+spec:
+  containers:
+  - env:
+    - name: TAG
+      value: v0.1.1
+    image: gcr.io/hal-spinnaker/sample-sb:v0.1.1
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /actuator/health
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+    name: hal-spinnaker-sample-sb
+    ports:
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /actuator/health
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: default-token-jnhmp
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  imagePullSecrets:
+  - name: my-gcr-registry
+  nodeName: gke-spinnaker-default-pool-b5b312bb-2ckw
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: default-token-jnhmp
+    secret:
+      defaultMode: 420
+      secretName: default-token-jnhmp
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: 2018-08-19T12:21:54Z
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: 2018-08-19T12:22:33Z
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: 2018-08-19T12:21:54Z
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://6749458cd66b1c51daed4440d115cd73ee349a7539a52e142385d64f0d54b548
+    image: gcr.io/hal-spinnaker/sample-sb:v0.1.1
+    imageID: docker-pullable://gcr.io/hal-spinnaker/sample-sb@sha256:abfd2a16b48d32bdbeeaa813dc65b1e806a2cf2ab72985bb1e95a40fd242dadf
+    lastState: {}
+    name: hal-spinnaker-sample-sb
+    ready: true
+    restartCount: 0
+    state:
+      running:
+        startedAt: 2018-08-19T12:21:55Z
+  hostIP: 10.148.0.2
+  phase: Running
+  podIP: 10.16.5.14
+  qosClass: Burstable
+  startTime: 2018-08-19T12:21:54Z

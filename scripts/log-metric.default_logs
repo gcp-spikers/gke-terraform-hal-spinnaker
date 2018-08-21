@@ -1,0 +1,23 @@
+description: Logs from 'default' namespace of spinnaker cluster
+filter: ( resource.type="k8s_container" AND resource.labels.cluster_name="spinnaker"
+  AND resource.labels.namespace_name="default" AND textPayload:" ERROR " )
+labelExtractors:
+  dev: EXTRACT(metadata.userLabels."load-balancer-helloworld-dev")
+  image_id: EXTRACT(metadata.systemLabels.container_image_id)
+  image_name: EXTRACT(metadata.systemLabels.container_image)
+  prod: EXTRACT(metadata.userLabels."load-balancer-helloworld-prod")
+  severity: REGEXP_EXTRACT(textPayload, ".* (ERROR|INFO|WARN|DEBUG) .*")
+metricDescriptor:
+  description: Error reported in logs from 'default' namespace of spinnaker cluster
+  labels:
+  - key: image_name
+  - key: severity
+  - key: prod
+  - key: image_id
+  - key: dev
+  metricKind: DELTA
+  name: projects/hal-spinnaker/metricDescriptors/logging.googleapis.com/user/default_logs
+  type: logging.googleapis.com/user/default_logs
+  unit: '1'
+  valueType: INT64
+name: default_logs
