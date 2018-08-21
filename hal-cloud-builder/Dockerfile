@@ -1,6 +1,6 @@
 FROM ubuntu as intermediate
 
-ENV TERRAFORM_VERSION=0.11.7
+ENV TERRAFORM_VERSION=0.11.8
 
 RUN  apt-get update \
      && apt-get -y install unzip curl
