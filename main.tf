@@ -36,6 +36,7 @@ resource "google_project_services" "myproject" {
     "bigquery-json.googleapis.com",
     "cloudkms.googleapis.com",
     "servicemanagement.googleapis.com",
+    "stackdriver.googleapis.com",
   ]
 }
 

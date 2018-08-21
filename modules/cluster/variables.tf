@@ -51,20 +51,18 @@ variable "oauth_scopes" {
   type = "list"
 
   default = [
-    "https://www.googleapis.com/auth/compute",
     "https://www.googleapis.com/auth/devstorage.read_only",
     "https://www.googleapis.com/auth/logging.write",
     "https://www.googleapis.com/auth/monitoring",
+    "https://www.googleapis.com/auth/service.management.readonly",
+    "https://www.googleapis.com/auth/servicecontrol",
+    "https://www.googleapis.com/auth/trace.append",
   ]
 
   description = <<EOF
-The set of Google API scopes to be made available on all of the node VMs under the "default" service account. These can be either FQDNs, or scope aliases.
-
-The following scopes are necessary to ensure the correct functioning of the cluster:
- - compute-rw (https://www.googleapis.com/auth/compute)
- - storage-ro (https://www.googleapis.com/auth/devstorage.read_only)
- - logging-write (https://www.googleapis.com/auth/logging.write), if logging_service points to Google
- - monitoring (https://www.googleapis.com/auth/monitoring), if monitoring_service points to Google
+list of scopes for node pool, refer
+  - https://cloud.google.com/sdk/gcloud/reference/container/node-pools/create
+  - https://medium.com/google-cloud/updating-google-container-engine-vm-scopes-with-zero-downtime-50bff87e5f80
 EOF
 }
 

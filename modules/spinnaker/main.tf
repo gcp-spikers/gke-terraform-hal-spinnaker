@@ -30,6 +30,13 @@ resource "google_storage_bucket" "spinnaker_config" {
   force_destroy = "true"
 }
 
+resource "google_storage_bucket" "spinnaker_canary_config" {
+  name          = "${var.project}-spinnaker-canary"
+  location      = "${var.gcs_location}"
+  storage_class = "NEARLINE"
+  force_destroy = "true"
+}
+
 # Create service account for spinner storage on gcs
 resource "google_service_account" "spinnaker_gcs" {
   account_id   = "${var.spinnaker_gcs_sa}"
@@ -57,6 +64,30 @@ resource "google_project_iam_binding" "role_browser" {
 
   members = [
     "serviceAccount:${google_service_account.spinnaker_gcr.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "role_compute_viewer" {
+  role = "roles/compute.viewer"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker_gcs.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "role_logging_admin" {
+  role = "roles/logging.admin"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker_gcs.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "role_monitoring_admin" {
+  role = "roles/monitoring.admin"
+
+  members = [
+    "serviceAccount:${google_service_account.spinnaker_gcs.email}",
   ]
 }
 
@@ -95,42 +126,50 @@ set -ex \
 && TOKEN=$(kubectl get secret --namespace $${k8s_namespace} $SECRET_NAME -o yaml  -o jsonpath='{.data.token}' | base64 --decode) \
 && kubectl config set-credentials $CONTEXT-token-user --token $TOKEN \
 && kubectl config set-context $CONTEXT --user $CONTEXT-token-user \
+&& kubectl --namespace=default patch serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}' || true \
 && GCS_ACCOUNT_JSON_FILE=/tmp/.gcs-account.json \
 && GCR_ACCOUNT_JSON_FILE=/tmp/.gcr-account.json \
 && echo '$${gcs_account_json}' | base64 --decode > $GCS_ACCOUNT_JSON_FILE \
 && echo '$${gcr_account_json}' | base64 --decode > $GCR_ACCOUNT_JSON_FILE \
-&& hal -q config provider docker-registry enable \
-&& hal -q config provider docker-registry account delete my-gcr-registry || true \
-&& hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
-&& hal -q config provider kubernetes enable \
-&& hal -q config provider kubernetes account delete my-k8s-v2-account || true \
-&& hal -q config provider kubernetes account add my-k8s-v2-account  --provider-version v2 \
-                                                                    --context $(kubectl config current-context) \
-                                                                    --omit-namespaces kube-system spinnaker kube-public \
+&& kubectl --namespace=default delete secret gcr-json-key || true \
 && kubectl --namespace=default create secret docker-registry gcr-json-key \
       --docker-server=gcr.io \
       --docker-username=_json_key \
       --docker-password="$(cat $GCR_ACCOUNT_JSON_FILE)" \
       --docker-email=any@valid.email \
-&& kubectl --namespace=default patch serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}' || true \
-&& hal -q config features edit --artifacts true \
-&& hal -q config deploy edit --type distributed --account-name my-k8s-v2-account \
+&& rm -f /opt/halyard/pid \
+&& hal -q config provider docker-registry account delete my-gcr-registry --no-validate || true \
+&& hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
+&& hal -q config provider docker-registry enable \
+&& echo hal -q config provider kubernetes account add my-k8s-v2-account  --provider-version v2 --context $(kubectl config current-context) \
+&& hal -q config provider kubernetes account delete my-k8s-account --no-validate || true \
+&& hal -q config provider kubernetes account add my-k8s-account --docker-registries my-gcr-registry --context $(kubectl config current-context) \
+&& hal -q config provider kubernetes enable \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
 && hal -q config storage edit --type gcs \
+&& hal -q config canary google account delete my-google-account --no-validate || true \
+&& hal -q config canary google account add my-google-account --project $${project} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${canary_bucket} \
+&& hal -q config canary google enable \
+&& hal -q config canary google edit --gcs-enabled true --stackdriver-enabled true \
+&& hal -q config canary edit --default-metrics-store stackdriver \
+&& hal -q config canary enable \
 && hal -q config version edit --version $(hal version latest -q) \
+&& hal -q config features edit --artifacts true \
+&& hal -q config deploy edit --type distributed --account-name my-k8s-account \
 && hal -q deploy apply
 EOF
 
   vars {
-    k8s_namespace     = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
-    k8s_sa            = "${kubernetes_service_account.spinnaker.metadata.0.name}"
-    zone              = "${var.zone}"
-    cluster_name      = "${var.cluster_name}"
-    project           = "${var.project}"
-    gcs_location      = "${var.gcs_location}"
-    bucket            = "${google_storage_bucket.spinnaker_config.name}"
-    gcs_account_json  = "${google_service_account_key.spinnaker_gcs.private_key}"
-    gcr_account_json  = "${google_service_account_key.spinnaker_gcr.private_key}"
+    k8s_namespace    = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
+    k8s_sa           = "${kubernetes_service_account.spinnaker.metadata.0.name}"
+    zone             = "${var.zone}"
+    cluster_name     = "${var.cluster_name}"
+    project          = "${var.project}"
+    gcs_location     = "${var.gcs_location}"
+    bucket           = "${google_storage_bucket.spinnaker_config.name}"
+    canary_bucket    = "${google_storage_bucket.spinnaker_canary_config.name}"
+    gcs_account_json = "${google_service_account_key.spinnaker_gcs.private_key}"
+    gcr_account_json = "${google_service_account_key.spinnaker_gcr.private_key}"
   }
 }
 
@@ -140,7 +179,7 @@ resource "null_resource" "deploy_spinnaker" {
   ]
 
   triggers {
-    cksum = "${sha256(data.template_file.deploy_spinnaker.rendered)}"
+    cksum = "${sha256(data.template_file.deploy_spinnaker.template)}"
   }
 
   provisioner "local-exec" {
