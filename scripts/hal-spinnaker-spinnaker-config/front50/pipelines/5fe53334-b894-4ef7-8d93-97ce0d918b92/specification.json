@@ -1,1 +1,470 @@
-{"keepWaitingPipelines":false,"limitConcurrent":true,"application":"helloworld","lastModifiedBy":"anonymous","name":"Production","stages":[{"cloudProvider":"kubernetes","cloudProviderType":"kubernetes","cluster":"helloworld-dev","credentials":"my-k8s-account","imageNamePattern":".*","name":"Find Image from Staging","namespaces":["default"],"onlyEnabled":true,"refId":"1","requisiteStageRefIds":[],"selectionStrategy":"NEWEST","type":"findImage"},{"clusters":[{"account":"my-k8s-account","application":"helloworld","cloudProvider":"kubernetes","containers":[{"args":[],"command":[],"envFrom":[],"envVars":[{"name":"TAG","value":"${trigger['artifacts'][0]['version'] }"}],"imageDescription":{"cluster":"helloworld-dev","fromContext":true,"imageId":"Find Image from Staging:undefined","pattern":".*","repository":"Find Image from Staging","stageId":"1"},"imagePullPolicy":"IFNOTPRESENT","limits":{"cpu":"500m","memory":"512Mi"},"livenessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"name":"hal-spinnaker-sample-sb","ports":[{"containerPort":8080,"name":"http","protocol":"TCP"}],"readinessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"requests":{"cpu":"250m","memory":"256Mi"},"volumeMounts":[]}],"dnsPolicy":"ClusterFirst","events":[],"freeFormDetails":"canary","initContainers":[],"interestingHealthProviderNames":["KubernetesContainer","KubernetesPod"],"loadBalancers":["helloworld-prod"],"namespace":"default","nodeSelector":{},"podAnnotations":{},"provider":"kubernetes","region":"default","replicaSetAnnotations":{},"securityGroups":[],"stack":"prod","strategy":"","targetSize":1,"terminationGracePeriodSeconds":30,"tolerations":[],"volumeSources":[]}],"name":"Deploy to Canary","refId":"2","requisiteStageRefIds":["1"],"stageEnabled":{"expression":"${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}","type":"expression"},"type":"deploy"},{"cloudProvider":"kubernetes","cloudProviderType":"kubernetes","cluster":"helloworld-prod","completeOtherBranchesThenFail":false,"continuePipeline":true,"credentials":"my-k8s-account","failPipeline":false,"name":"Find Image from Prod","namespaces":["default"],"onlyEnabled":true,"refId":"3","requisiteStageRefIds":[],"selectionStrategy":"NEWEST","type":"findImage"},{"clusters":[{"account":"my-k8s-account","application":"helloworld","cloudProvider":"kubernetes","containers":[{"args":[],"command":[],"envFrom":[],"envVars":[{"name":"TAG","value":"${ #stage( 'Find Image from Prod' )['outputs']['deploymentDetails'][0]['tag'] }"}],"imageDescription":{"cluster":"helloworld-prod","fromContext":true,"imageId":"Find Image from Prod:undefined","repository":"Find Image from Prod","stageId":"3"},"imagePullPolicy":"IFNOTPRESENT","limits":{"cpu":"500m","memory":"512Mi"},"livenessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"name":"hal-spinnaker-sample-sb","ports":[{"containerPort":8080,"name":"http","protocol":"TCP"}],"readinessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"requests":{"cpu":"250m","memory":"256Mi"},"volumeMounts":[]}],"dnsPolicy":"ClusterFirst","events":[],"freeFormDetails":"baseline","initContainers":[],"interestingHealthProviderNames":["KubernetesContainer","KubernetesPod"],"loadBalancers":["helloworld-prod"],"namespace":"default","nodeSelector":{},"podAnnotations":{},"provider":"kubernetes","region":"default","replicaSetAnnotations":{},"securityGroups":[],"stack":"prod","strategy":"","targetSize":1,"terminationGracePeriodSeconds":30,"tolerations":[],"volumeSources":[]}],"name":"Deploy to Baseline","refId":"4","requisiteStageRefIds":["3"],"stageEnabled":{"expression":"${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}","type":"expression"},"type":"deploy"},{"analysisType":"realTime","canaryConfig":{"beginCanaryAnalysisAfterMins":"2","canaryAnalysisIntervalMins":"5","canaryConfigId":"6499163f-ebc5-4ead-a148-3e8c903ad29f","combinedCanaryResultStrategy":"LOWEST","lifetimeDuration":"PT0H15M","metricsAccountName":"my-google-account","scopes":[{"controlLocation":"${deployedServerGroups[0].region }","controlScope":"helloworld-prod-baseline","experimentLocation":"${deployedServerGroups[0].region}","experimentScope":"helloworld-prod-canary","extendedScopeParams":{"resourceType":"k8s_container"},"scopeName":"default","step":60}],"scoreThresholds":{"marginal":"20","pass":"75"},"storageAccountName":"my-google-account"},"name":"Canary Analysis","refId":"5","requisiteStageRefIds":["4","2"],"stageEnabled":{"expression":"${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}","type":"expression"},"type":"kayentaCanary"},{"clusters":[{"account":"my-k8s-account","application":"helloworld","cloudProvider":"kubernetes","containers":[{"args":[],"command":[],"envFrom":[],"envVars":[{"name":"TAG","value":"${trigger['artifacts'][0]['version'] }"}],"imageDescription":{"cluster":"helloworld-dev","fromContext":true,"imageId":"Find Image from Staging:undefined","pattern":".*","repository":"Find Image from Staging","stageId":"1"},"imagePullPolicy":"IFNOTPRESENT","limits":{"cpu":"500m","memory":"512Mi"},"livenessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"name":"hal-spinnaker-sample-sb","ports":[{"containerPort":8080,"name":"http","protocol":"TCP"}],"readinessProbe":{"failureThreshold":3,"handler":{"execAction":{"commands":[]},"httpGetAction":{"path":"/actuator/health","port":8080,"uriScheme":"HTTP"},"tcpSocketAction":{"port":80},"type":"HTTP"},"initialDelaySeconds":20,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"requests":{"cpu":"250m","memory":"256Mi"},"volumeMounts":[]}],"delayBeforeDisableSec":30,"dnsPolicy":"ClusterFirst","events":[],"initContainers":[],"interestingHealthProviderNames":["KubernetesContainer","KubernetesPod"],"loadBalancers":["helloworld-prod"],"maxRemainingAsgs":2,"namespace":"default","nodeSelector":{},"podAnnotations":{},"provider":"kubernetes","region":"default","replicaSetAnnotations":{},"rollback":{"onFailure":true},"scaleDown":false,"securityGroups":[],"stack":"prod","strategy":"redblack","targetSize":1,"terminationGracePeriodSeconds":30,"tolerations":[],"volumeSources":[]}],"name":"Deploy to Prod","refId":"6","requisiteStageRefIds":["5"],"type":"deploy"}],"index":1,"disabled":false,"id":"5fe53334-b894-4ef7-8d93-97ce0d918b92","triggers":[{"application":"helloworld","enabled":true,"pipeline":"cc01b54f-a4d0-49c2-ba75-bca8bb64cc6e","status":["successful"],"type":"pipeline"}],"updateTs":"1534853431149"}
+{
+  "keepWaitingPipelines": false,
+  "limitConcurrent": true,
+  "application": "helloworld",
+  "lastModifiedBy": "anonymous",
+  "name": "Production",
+  "stages": [
+    {
+      "cloudProvider": "kubernetes",
+      "cloudProviderType": "kubernetes",
+      "cluster": "helloworld-dev",
+      "credentials": "my-k8s-account",
+      "imageNamePattern": ".*",
+      "name": "Find Image from Staging",
+      "namespaces": [
+        "default"
+      ],
+      "onlyEnabled": true,
+      "refId": "1",
+      "requisiteStageRefIds": [],
+      "selectionStrategy": "NEWEST",
+      "type": "findImage"
+    },
+    {
+      "clusters": [
+        {
+          "account": "my-k8s-account",
+          "application": "helloworld",
+          "cloudProvider": "kubernetes",
+          "containers": [
+            {
+              "args": [],
+              "command": [],
+              "envFrom": [],
+              "envVars": [
+                {
+                  "name": "TAG",
+                  "value": "${trigger['artifacts'][0]['version'] }"
+                }
+              ],
+              "imageDescription": {
+                "cluster": "helloworld-dev",
+                "fromContext": true,
+                "imageId": "Find Image from Staging:undefined",
+                "pattern": ".*",
+                "repository": "Find Image from Staging",
+                "stageId": "1"
+              },
+              "imagePullPolicy": "IFNOTPRESENT",
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              },
+              "livenessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "name": "hal-spinnaker-sample-sb",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http",
+                  "protocol": "TCP"
+                }
+              ],
+              "readinessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              },
+              "volumeMounts": []
+            }
+          ],
+          "dnsPolicy": "ClusterFirst",
+          "events": [],
+          "freeFormDetails": "canary",
+          "initContainers": [],
+          "interestingHealthProviderNames": [
+            "KubernetesContainer",
+            "KubernetesPod"
+          ],
+          "loadBalancers": [
+            "helloworld-prod"
+          ],
+          "namespace": "default",
+          "nodeSelector": {},
+          "podAnnotations": {},
+          "provider": "kubernetes",
+          "region": "default",
+          "replicaSetAnnotations": {},
+          "securityGroups": [],
+          "stack": "prod",
+          "strategy": "",
+          "targetSize": 1,
+          "terminationGracePeriodSeconds": 30,
+          "tolerations": [],
+          "volumeSources": []
+        }
+      ],
+      "name": "Deploy to Canary",
+      "refId": "2",
+      "requisiteStageRefIds": [
+        "1"
+      ],
+      "stageEnabled": {
+        "expression": "${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}",
+        "type": "expression"
+      },
+      "type": "deploy"
+    },
+    {
+      "cloudProvider": "kubernetes",
+      "cloudProviderType": "kubernetes",
+      "cluster": "helloworld-prod",
+      "completeOtherBranchesThenFail": false,
+      "continuePipeline": true,
+      "credentials": "my-k8s-account",
+      "failPipeline": false,
+      "name": "Find Image from Prod",
+      "namespaces": [
+        "default"
+      ],
+      "onlyEnabled": true,
+      "refId": "3",
+      "requisiteStageRefIds": [],
+      "selectionStrategy": "NEWEST",
+      "type": "findImage"
+    },
+    {
+      "clusters": [
+        {
+          "account": "my-k8s-account",
+          "application": "helloworld",
+          "cloudProvider": "kubernetes",
+          "containers": [
+            {
+              "args": [],
+              "command": [],
+              "envFrom": [],
+              "envVars": [
+                {
+                  "name": "TAG",
+                  "value": "${ #stage( 'Find Image from Prod' )['outputs']['deploymentDetails'][0]['tag'] }"
+                }
+              ],
+              "imageDescription": {
+                "cluster": "helloworld-prod",
+                "fromContext": true,
+                "imageId": "Find Image from Prod:undefined",
+                "repository": "Find Image from Prod",
+                "stageId": "3"
+              },
+              "imagePullPolicy": "IFNOTPRESENT",
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              },
+              "livenessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "name": "hal-spinnaker-sample-sb",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http",
+                  "protocol": "TCP"
+                }
+              ],
+              "readinessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              },
+              "volumeMounts": []
+            }
+          ],
+          "dnsPolicy": "ClusterFirst",
+          "events": [],
+          "freeFormDetails": "baseline",
+          "initContainers": [],
+          "interestingHealthProviderNames": [
+            "KubernetesContainer",
+            "KubernetesPod"
+          ],
+          "loadBalancers": [
+            "helloworld-prod"
+          ],
+          "namespace": "default",
+          "nodeSelector": {},
+          "podAnnotations": {},
+          "provider": "kubernetes",
+          "region": "default",
+          "replicaSetAnnotations": {},
+          "securityGroups": [],
+          "stack": "prod",
+          "strategy": "",
+          "targetSize": 1,
+          "terminationGracePeriodSeconds": 30,
+          "tolerations": [],
+          "volumeSources": []
+        }
+      ],
+      "name": "Deploy to Baseline",
+      "refId": "4",
+      "requisiteStageRefIds": [
+        "3"
+      ],
+      "stageEnabled": {
+        "expression": "${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}",
+        "type": "expression"
+      },
+      "type": "deploy"
+    },
+    {
+      "analysisType": "realTime",
+      "canaryConfig": {
+        "beginCanaryAnalysisAfterMins": "2",
+        "canaryAnalysisIntervalMins": "5",
+        "canaryConfigId": "6499163f-ebc5-4ead-a148-3e8c903ad29f",
+        "combinedCanaryResultStrategy": "LOWEST",
+        "lifetimeDuration": "PT0H15M",
+        "metricsAccountName": "my-google-account",
+        "scopes": [
+          {
+            "controlLocation": "${deployedServerGroups[0].region }",
+            "controlScope": "helloworld-prod-baseline",
+            "experimentLocation": "${deployedServerGroups[0].region}",
+            "experimentScope": "helloworld-prod-canary",
+            "extendedScopeParams": {
+              "resourceType": "k8s_container"
+            },
+            "scopeName": "default",
+            "step": 60
+          }
+        ],
+        "scoreThresholds": {
+          "marginal": "20",
+          "pass": "75"
+        },
+        "storageAccountName": "my-google-account"
+      },
+      "name": "Canary Analysis",
+      "refId": "5",
+      "requisiteStageRefIds": [
+        "4",
+        "2"
+      ],
+      "stageEnabled": {
+        "expression": "${#stage(\"Find Image from Prod\")[\"status\"].toString() == \"SUCCEEDED\"}",
+        "type": "expression"
+      },
+      "type": "kayentaCanary"
+    },
+    {
+      "clusters": [
+        {
+          "account": "my-k8s-account",
+          "application": "helloworld",
+          "cloudProvider": "kubernetes",
+          "containers": [
+            {
+              "args": [],
+              "command": [],
+              "envFrom": [],
+              "envVars": [
+                {
+                  "name": "TAG",
+                  "value": "${trigger['artifacts'][0]['version'] }"
+                }
+              ],
+              "imageDescription": {
+                "cluster": "helloworld-dev",
+                "fromContext": true,
+                "imageId": "Find Image from Staging:undefined",
+                "pattern": ".*",
+                "repository": "Find Image from Staging",
+                "stageId": "1"
+              },
+              "imagePullPolicy": "IFNOTPRESENT",
+              "limits": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              },
+              "livenessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "name": "hal-spinnaker-sample-sb",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http",
+                  "protocol": "TCP"
+                }
+              ],
+              "readinessProbe": {
+                "failureThreshold": 3,
+                "handler": {
+                  "execAction": {
+                    "commands": []
+                  },
+                  "httpGetAction": {
+                    "path": "/actuator/health",
+                    "port": 8080,
+                    "uriScheme": "HTTP"
+                  },
+                  "tcpSocketAction": {
+                    "port": 80
+                  },
+                  "type": "HTTP"
+                },
+                "initialDelaySeconds": 20,
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 1
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              },
+              "volumeMounts": []
+            }
+          ],
+          "delayBeforeDisableSec": 30,
+          "dnsPolicy": "ClusterFirst",
+          "events": [],
+          "initContainers": [],
+          "interestingHealthProviderNames": [
+            "KubernetesContainer",
+            "KubernetesPod"
+          ],
+          "loadBalancers": [
+            "helloworld-prod"
+          ],
+          "maxRemainingAsgs": 2,
+          "namespace": "default",
+          "nodeSelector": {},
+          "podAnnotations": {},
+          "provider": "kubernetes",
+          "region": "default",
+          "replicaSetAnnotations": {},
+          "rollback": {
+            "onFailure": true
+          },
+          "scaleDown": false,
+          "securityGroups": [],
+          "stack": "prod",
+          "strategy": "redblack",
+          "targetSize": 1,
+          "terminationGracePeriodSeconds": 30,
+          "tolerations": [],
+          "volumeSources": []
+        }
+      ],
+      "name": "Deploy to Prod",
+      "refId": "6",
+      "requisiteStageRefIds": [
+        "5"
+      ],
+      "type": "deploy"
+    }
+  ],
+  "index": 1,
+  "disabled": false,
+  "id": "5fe53334-b894-4ef7-8d93-97ce0d918b92",
+  "triggers": [
+    {
+      "application": "helloworld",
+      "enabled": true,
+      "pipeline": "cc01b54f-a4d0-49c2-ba75-bca8bb64cc6e",
+      "status": [
+        "successful"
+      ],
+      "type": "pipeline"
+    }
+  ],
+  "updateTs": "1534853431149"
+}

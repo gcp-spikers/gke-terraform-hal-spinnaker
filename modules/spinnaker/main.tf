@@ -154,7 +154,7 @@ set -ex \
 && hal -q config canary edit --default-metrics-store stackdriver \
 && hal -q config canary enable \
 && hal -q config version edit --version $(hal version latest -q) \
-&& hal -q config features edit --artifacts true \
+&& hal -q config features edit --artifacts true --pipeline-templates true \
 && hal -q config deploy edit --type distributed --account-name my-k8s-account \
 && hal -q deploy apply
 EOF
