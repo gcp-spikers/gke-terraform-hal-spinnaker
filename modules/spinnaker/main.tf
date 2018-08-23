@@ -30,13 +30,6 @@ resource "google_storage_bucket" "spinnaker_config" {
   force_destroy = "true"
 }
 
-resource "google_storage_bucket" "spinnaker_canary_config" {
-  name          = "${var.project}-spinnaker-canary"
-  location      = "${var.gcs_location}"
-  storage_class = "NEARLINE"
-  force_destroy = "true"
-}
-
 # Create service account for spinner storage on gcs
 resource "google_service_account" "spinnaker_gcs" {
   account_id   = "${var.spinnaker_gcs_sa}"
@@ -148,7 +141,7 @@ set -ex \
 && hal -q config storage gcs edit --project $${project} --bucket-location $${gcs_location} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
 && hal -q config storage edit --type gcs \
 && hal -q config canary google account delete my-google-account --no-validate || true \
-&& hal -q config canary google account add my-google-account --project $${project} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${canary_bucket} \
+&& hal -q config canary google account add my-google-account --project $${project} --json-path $GCS_ACCOUNT_JSON_FILE --bucket $${bucket} \
 && hal -q config canary google enable \
 && hal -q config canary google edit --gcs-enabled true --stackdriver-enabled true \
 && hal -q config canary edit --default-metrics-store stackdriver \
@@ -167,7 +160,6 @@ EOF
     project          = "${var.project}"
     gcs_location     = "${var.gcs_location}"
     bucket           = "${google_storage_bucket.spinnaker_config.name}"
-    canary_bucket    = "${google_storage_bucket.spinnaker_canary_config.name}"
     gcs_account_json = "${google_service_account_key.spinnaker_gcs.private_key}"
     gcr_account_json = "${google_service_account_key.spinnaker_gcr.private_key}"
   }
