@@ -130,6 +130,7 @@ set -ex \
       --docker-username=_json_key \
       --docker-password="$(cat $GCR_ACCOUNT_JSON_FILE)" \
       --docker-email=any@valid.email \
+&& kubectl --namespace $${k8s_namespace} apply -f redis-deployment.yaml \
 && rm -f /opt/halyard/pid \
 && hal -q config provider docker-registry account delete my-gcr-registry --no-validate || true \
 && hal -q config provider docker-registry account add my-gcr-registry --address 'gcr.io' --username _json_key --password-file $GCR_ACCOUNT_JSON_FILE \
@@ -149,6 +150,18 @@ set -ex \
 && hal -q config version edit --version $(hal version latest -q) \
 && hal -q config features edit --artifacts true --pipeline-templates true \
 && hal -q config deploy edit --type distributed --account-name my-k8s-account \
+&& [[ -d /home/hal/.hal ]] && HAL_ROOT=/home/hal/.hal || true \
+&& [[ -z "$HAL_ROOT" ]] && HAL_ROOT=$HOME/.hal || true \
+&& SETT_DIR=$HAL_ROOT/default/service-settings \
+&& SETT_FILE=$SETT_DIR/redis.yml \
+&& mkdir -p $SETT_DIR \
+&& echo "enabled: false" > $SETT_FILE \
+&& echo "overrideBaseUrl: $${redis_url}" >> $SETT_FILE \
+&& echo "skipLifeCycleManagement: true" >> $SETT_FILE \
+&& BOOT_SETT_FILE=$SETT_DIR/redis-bootstrap.yml \
+&& echo "enabled: false" > $BOOT_SETT_FILE \
+&& echo "overrideBaseUrl: $${redis_url}" >> $BOOT_SETT_FILE \
+&& echo "skipLifeCycleManagement: true" >> $BOOT_SETT_FILE \
 && hal -q deploy apply
 EOF
 
@@ -162,6 +175,7 @@ EOF
     bucket           = "${google_storage_bucket.spinnaker_config.name}"
     gcs_account_json = "${google_service_account_key.spinnaker_gcs.private_key}"
     gcr_account_json = "${google_service_account_key.spinnaker_gcr.private_key}"
+    redis_url        = "redis://:redis@ext-redis-master.spinnaker:6379"
   }
 }
 
@@ -175,6 +189,7 @@ resource "null_resource" "deploy_spinnaker" {
   }
 
   provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
     command = "${data.template_file.deploy_spinnaker.rendered}"
   }
 }
