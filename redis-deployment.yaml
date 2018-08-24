@@ -23,7 +23,6 @@ metadata:
     chart: redis-3.7.6
     release: "ext"
     heritage: "Tiller"
-  annotations:
 spec:
   type: ClusterIP
   ports:
@@ -37,7 +36,7 @@ spec:
 
 ---
 # Source: redis/templates/redis-master-statefulset.yaml
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: ext-redis-master
@@ -101,57 +100,147 @@ spec:
             command:
             - redis-cli
             - ping
-        resources:
-          null
-          
         volumeMounts:
         - name: redis-data
           mountPath: /bitnami/redis/data
-          subPath: 
   volumeClaimTemplates:
-    - metadata:
-        name: redis-data
-        labels:
-          app: "redis"
-          chart: redis-3.7.6
-          component: "master"
-          release: "ext"
-          heritage: "Tiller"
-      spec:
-        accessModes:
-          - "ReadWriteOnce"
-        resources:
-          requests:
-            storage: "8Gi"
+  - metadata:
+      name: redis-data
+      labels:
+        app: "redis"
+        chart: redis-3.7.6
+        component: "master"
+        release: "ext"
+        heritage: "Tiller"
+    spec:
+      accessModes:
+      - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "8Gi"
   updateStrategy:
     type: OnDelete
 
 ---
-# Source: redis/templates/metrics-deployment.yaml
-
+# Source: redis/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ext-bootstrap-redis
+  labels:
+    app: redis
+    chart: redis-3.7.6
+    release: "ext-bootstrap"
+    heritage: "Tiller"
+type: Opaque
+data:
+  redis-password: "cmVkaXM="
+---
+# Source: redis/templates/redis-master-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-bootstrap-redis-master
+  labels:
+    app: redis
+    chart: redis-3.7.6
+    release: "ext-bootstrap"
+    heritage: "Tiller"
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+  selector:
+    app: redis
+    release: "ext-bootstrap"
+    role: master
 
 ---
-# Source: redis/templates/metrics-svc.yaml
-
-
----
-# Source: redis/templates/networkpolicy.yaml
-
-
----
-# Source: redis/templates/redis-role.yaml
-
----
-# Source: redis/templates/redis-rolebinding.yaml
-
----
-# Source: redis/templates/redis-serviceaccount.yaml
-
----
-# Source: redis/templates/redis-slave-deployment.yaml
-
-
----
-# Source: redis/templates/redis-slave-svc.yaml
-
+# Source: redis/templates/redis-master-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ext-bootstrap-redis-master
+  labels:
+    app: redis
+    chart: redis-3.7.6
+    release: "ext-bootstrap"
+    heritage: "Tiller"
+spec:
+  selector:
+    matchLabels:
+      release: "ext-bootstrap"
+      chart: redis-3.7.6
+      role: master
+      app: redis
+  serviceName: "redis-master"
+  template:
+    metadata:
+      labels:
+        release: "ext-bootstrap"
+        chart: redis-3.7.6
+        role: master
+        app: redis
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: "default"
+      containers:
+      - name: ext-bootstrap-redis
+        image: "docker.io/bitnami/redis:4.0.11-debian-9"
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: REDIS_REPLICATION_MODE
+          value: master
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ext-bootstrap-redis
+              key: redis-password
+        ports:
+        - name: redis
+          containerPort: 6379
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - redis-cli
+            - ping
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - redis-cli
+            - ping
+        volumeMounts:
+        - name: redis-data
+          mountPath: /bitnami/redis/data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+      labels:
+        app: "redis"
+        chart: redis-3.7.6
+        component: "master"
+        release: "ext-bootstrap"
+        heritage: "Tiller"
+    spec:
+      accessModes:
+      - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "8Gi"
+  updateStrategy:
+    type: OnDelete
 

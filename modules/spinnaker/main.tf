@@ -157,20 +157,24 @@ set -ex \
 && SETT_FILE=$SETT_DIR/redis.yml \
 && echo "overrideBaseUrl: $${redis_url}" > $SETT_FILE \
 && echo "skipLifeCycleManagement: true" >> $SETT_FILE \
+&& BOOT_SETT_FILE=$SETT_DIR/redis-bootstrap.yml \
+&& echo "overrideBaseUrl: $${bootstrap_redis_url}" > $BOOT_SETT_FILE \
+&& echo "skipLifeCycleManagement: true" >> $BOOT_SETT_FILE \
 && hal -q deploy apply
 EOF
 
   vars {
-    k8s_namespace    = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
-    k8s_sa           = "${kubernetes_service_account.spinnaker.metadata.0.name}"
-    zone             = "${var.zone}"
-    cluster_name     = "${var.cluster_name}"
-    project          = "${var.project}"
-    gcs_location     = "${var.gcs_location}"
-    bucket           = "${google_storage_bucket.spinnaker_config.name}"
-    gcs_account_json = "${google_service_account_key.spinnaker_gcs.private_key}"
-    gcr_account_json = "${google_service_account_key.spinnaker_gcr.private_key}"
-    redis_url        = "redis://:redis@ext-redis-master.spinnaker:6379"
+    k8s_namespace       = "${kubernetes_service_account.spinnaker.metadata.0.namespace}"
+    k8s_sa              = "${kubernetes_service_account.spinnaker.metadata.0.name}"
+    zone                = "${var.zone}"
+    cluster_name        = "${var.cluster_name}"
+    project             = "${var.project}"
+    gcs_location        = "${var.gcs_location}"
+    bucket              = "${google_storage_bucket.spinnaker_config.name}"
+    gcs_account_json    = "${google_service_account_key.spinnaker_gcs.private_key}"
+    gcr_account_json    = "${google_service_account_key.spinnaker_gcr.private_key}"
+    redis_url           = "redis://:redis@ext-redis-master.spinnaker:6379"
+    bootstrap_redis_url = "redis://:redis@ext-bootstrap-redis-master.spinnaker:6379"
   }
 }
 
@@ -185,6 +189,6 @@ resource "null_resource" "deploy_spinnaker" {
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command = "${data.template_file.deploy_spinnaker.rendered}"
+    command     = "${data.template_file.deploy_spinnaker.rendered}"
   }
 }
