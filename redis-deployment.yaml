@@ -78,8 +78,6 @@ spec:
             secretKeyRef:
               name: ext-redis
               key: redis-password
-        - name: REDIS_DISABLE_COMMANDS
-          value: FLUSHDB,FLUSHALL
         ports:
         - name: redis
           containerPort: 6379

@@ -155,13 +155,8 @@ set -ex \
 && SETT_DIR=$HAL_ROOT/default/service-settings \
 && SETT_FILE=$SETT_DIR/redis.yml \
 && mkdir -p $SETT_DIR \
-&& echo "enabled: false" > $SETT_FILE \
-&& echo "overrideBaseUrl: $${redis_url}" >> $SETT_FILE \
+&& echo "overrideBaseUrl: $${redis_url}" > $SETT_FILE \
 && echo "skipLifeCycleManagement: true" >> $SETT_FILE \
-&& BOOT_SETT_FILE=$SETT_DIR/redis-bootstrap.yml \
-&& echo "enabled: false" > $BOOT_SETT_FILE \
-&& echo "overrideBaseUrl: $${redis_url}" >> $BOOT_SETT_FILE \
-&& echo "skipLifeCycleManagement: true" >> $BOOT_SETT_FILE \
 && hal -q deploy apply
 EOF
 
