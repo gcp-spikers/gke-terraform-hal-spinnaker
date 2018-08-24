@@ -153,8 +153,8 @@ set -ex \
 && [[ -d /home/hal/.hal ]] && HAL_ROOT=/home/hal/.hal || true \
 && [[ -z "$HAL_ROOT" ]] && HAL_ROOT=$HOME/.hal || true \
 && SETT_DIR=$HAL_ROOT/default/service-settings \
-&& SETT_FILE=$SETT_DIR/redis.yml \
 && mkdir -p $SETT_DIR \
+&& SETT_FILE=$SETT_DIR/redis.yml \
 && echo "overrideBaseUrl: $${redis_url}" > $SETT_FILE \
 && echo "skipLifeCycleManagement: true" >> $SETT_FILE \
 && hal -q deploy apply

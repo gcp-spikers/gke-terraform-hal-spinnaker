@@ -16,7 +16,7 @@ steps:
     terraform plan -out terraform.plan -var 'project=${PROJECT_ID}'
     terraform apply terraform.plan
 - name: 'gcr.io/cloud-builders/gsutil'
-  args: ['-m', 'cp', '-r', '/home/hal/.hal', 'gs://terraform-190393331717/dot_hal_dir' ]
+  args: ['-m', 'cp', '-r', '/home/hal/.hal', 'gs://terraform-190393331717/' ]
   volumes:
   - name: 'dot_hal_dir'
     path: '/home/hal/.hal'
