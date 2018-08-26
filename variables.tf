@@ -16,11 +16,11 @@ variable "cluster_name" {
 }
 
 variable "cluster_nodes_count" {
-  default     = 3
+  default     = 2
   description = "Number of nodes in the GKE cluster"
 }
 
 variable "node_type" {
-  default     = "n1-standard-4"
+  default     = "n1-standard-2"
   description = "VM Node type"
 }

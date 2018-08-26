@@ -1,0 +1,4 @@
+#  Local .terraform directories
+canary_results
+metric_pairs
+metrics
