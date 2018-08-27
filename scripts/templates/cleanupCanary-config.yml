@@ -1,0 +1,12 @@
+schema: "1"
+pipeline:
+  application: test
+  name: Cleanup Canary
+  template:
+    source: spinnaker://cleanupCanary
+  variables:
+    account: my-k8s-account
+    namespace: default
+    prodPipelineId: "ca77a82a-4804-44ba-8f7b-1279842c7e31"
+configuration:
+  inherit: [ "concurrentExecutions", "triggers" ]

@@ -17,12 +17,12 @@ configuration:
     limitConcurrent: true
     parallel: true
   triggers:
-  - account: "{{ image.account }}"
+  - type: docker
     enabled: true
+    account: "{{ image.account }}"
     organization: "{{ image.organization }}"
     registry: "{{ image.registry }}"
     repository: "{{ image.organization }}/{{ image.name }}"
-    type: docker
 stages:
 - id: deploy
   type: deploy

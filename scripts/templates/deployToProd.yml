@@ -7,12 +7,13 @@ metadata:
   scopes:
   - global
 protect: false
+
 variables:
 - name: canary
   type: Object
   example: |
     canary:
-      pipeline: "Deploy to Dev"
+      pipelineId: "Deploy to Dev"
       cluster: "test-dev"
       account: "my-k8s-account"
       namespace: "default"
@@ -44,13 +45,12 @@ configuration:
     limitConcurrent: true
     parallel: true
   triggers:
-  - application: "{{ application }}"
+  - type: pipeline
     enabled: true
-    name: "{{ canary.pipeline }}"
-    pipeline: "{{ canary.pipeline }}"
+    application: "{{ application }}"
+    pipeline: "{{ canary.pipelineId }}"
     status:
     - successful
-    type: pipeline
 
 stages:
 # Find canary image from test cluster

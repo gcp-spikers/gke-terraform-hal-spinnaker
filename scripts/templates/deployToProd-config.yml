@@ -6,7 +6,7 @@ pipeline:
     source: spinnaker://deployToProd
   variables:
     canary:
-      pipeline: "2bf51d1b-8ddb-431e-87c4-ddff3bd73224"
+      pipelineId: "e8f7656d-dfe0-468b-8748-6198b3ecf929"
       cluster: "test-dev"
       account: "my-k8s-account"
       namespace: "default"

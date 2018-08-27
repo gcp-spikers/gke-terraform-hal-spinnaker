@@ -1,0 +1,14 @@
+attributes:
+  accounts: my-k8s-account
+  email: "fake@spinnaker.io"
+  cloudProviders: kubernetes
+  dataSources:
+    disabled: []
+    enabled:
+    - canaryConfigs
+  instancePort: 80
+  trafficGuards:
+  - account: my-k8s-account
+    location: default
+    stack: prod
+email: "fake@spinnaker.io"

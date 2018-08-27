@@ -1,0 +1,60 @@
+schema: "1"
+id: cleanupCanary
+metadata:
+  description: Cleanup Canary and Baseline clusters
+  name:  Cleanup Canary and Baseline clusters
+  owner: pipelineservice@ea.anz.com
+  scopes:
+  - global
+protect: false
+
+variables:
+- name: account
+  type: String
+- name: namespace
+  type: String
+- name: prodPipelineId
+  type: String
+
+configuration:
+  concurrentExecutions:
+    limitConcurrent: true
+    parallel: true
+  triggers:
+  - type: pipeline
+    enabled: true
+    application: "{{ application }}"
+    pipeline: "{{ prodPipelineId }}"
+    status:
+    - successful
+    - failed
+    - canceled
+
+stages:
+- id: destroyBaseline
+  name: Destroy Baseline
+  type: destroyServerGroup
+  config:
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    cluster: "{{ application }}-prod-baseline"
+    completeOtherBranchesThenFail: false
+    continuePipeline: true
+    credentials: "{{account}}"
+    failPipeline: false
+    namespaces:
+    - "{{namespace}}"
+
+- id: destroyCanary
+  name: Destroy Canary
+  type: destroyServerGroup
+  config:
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    cluster: "{{ application }}-prod-canary"
+    completeOtherBranchesThenFail: false
+    continuePipeline: true
+    credentials: "{{account}}"
+    failPipeline: false
+    namespaces:
+    - "{{namespace}}"
