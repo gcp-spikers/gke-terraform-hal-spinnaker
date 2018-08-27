@@ -1,0 +1,26 @@
+schema: "1"
+pipeline:
+  application: test
+  name: Deploy to Dev
+  template:
+    source: spinnaker://deployToTest
+  variables:
+    image:
+      account: my-gcr-registry
+      registry: gcr.io
+      organization: hal-spinnaker
+      name: sample-sb
+    cluster:
+      account: my-k8s-account
+      namespace: default
+      size: 1
+      port: 8080
+      loadBalancers:
+      - test-dev
+      strategy: highlander
+      stack: dev
+      probe:
+        path: /actuator/health
+        port: 8080
+configuration:
+  inherit: [ "concurrentExecutions", "triggers" ]

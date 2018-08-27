@@ -1,0 +1,155 @@
+schema: "1"
+id: deployToTest
+metadata:
+  name: Deploy an image from trigger to Test Env
+  description: Deploy an image from trigger to Test Env
+  owner: pipelineservice@ea.anz.com
+  scopes:
+    - global
+protect: false
+variables:
+- name: image
+  type: Object
+- name: cluster
+  type: Object
+configuration:
+  concurrentExecutions:
+    limitConcurrent: true
+    parallel: true
+  triggers:
+  - account: "{{ image.account }}"
+    enabled: true
+    organization: "{{ image.organization }}"
+    registry: "{{ image.registry }}"
+    repository: "{{ image.organization }}/{{ image.name }}"
+    type: docker
+stages:
+- id: deploy
+  type: deploy
+  name: "Deploy to {{ cluster.stack }}"
+  config:
+    clusters: |
+      {% if cluster %}
+      - {% module  deployTriggerImageToCluster
+          account=cluster.account,
+          namespace=cluster.namespace,
+          size=cluster.size,
+          port=cluster.port,
+          loadBalancers=cluster.loadBalancers,
+          strategy=cluster.strategy,
+          stack=cluster.stack,
+          image=image,
+          probe=cluster.probe %}
+      {% endif %}
+
+modules:
+- id: deployTriggerImageToCluster
+  variables:
+  - name: account
+    type: String
+  - name: namespace
+    type: String
+  - name: size
+    type: int
+    defaultValue: 1
+  - name: port
+    type: int
+    defaultValue: 8080
+  - name: loadBalancers
+    type: list
+  - name: strategy
+    type: String
+    defaultValue: highlander
+  - name: stack
+    type: String
+    defaultValue: dev
+  - name: cpuRequest
+    type: String
+    defaultValue: 250m
+  - name: cpuLimit
+    type: String
+    defaultValue: 500m
+  - name: memoryRequest
+    type: String
+    defaultValue: 256Mi
+  - name: memoryLimit
+    type: String
+    defaultValue: 512Mi
+  - name: image
+    type: Object
+    example: |
+      image:
+        account: <docker-registry-account>
+        registry: gcr.io
+        organization: <project-id>
+        name: <docker-image-name>
+  - name: probe
+    type: Object
+    example: |
+      probe:
+        path: URI to be invoked for probe
+        port: 8080
+  definition:
+    account: "{{ account }}"
+    application: "{{ application }}"
+    cloudProvider: kubernetes
+    namespace: "{{ namespace }}"
+    provider: kubernetes
+    region: "{{ namespace }}"
+    stack: "{{ stack }}"
+    strategy: "{{ strategy }}"
+    targetSize: "{{ size }}"
+    terminationGracePeriodSeconds: 30
+    loadBalancers: |
+      {% for lb in loadBalancers %}
+      - {{ lb }}
+      {% endfor %}
+    containers:
+    - name: "{{ image.name }}"
+      envVars:
+      - name: TAG
+        value: ${trigger['tag']}
+      imageDescription:
+        account: "{{ image.account }}"
+        fromTrigger: true
+        imageId: "{{ image.registry }}/{{ image.organization }}/{{ image.name }}"
+        registry: "{{ image.registry }}"
+        repository: "{{ image.organization }}/{{ image.name }}"
+      imagePullPolicy: IFNOTPRESENT
+      livenessProbe: |
+        {% if probe %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probe.path }}"
+            port: "{{ probe.port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      readinessProbe: |
+        {% if probe %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probe.path }}"
+            port: "{{ probe.port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      ports:
+      - containerPort: "{{ port }}"
+        protocol: TCP
+      limits:
+        cpu: "{{ cpuLimit }}"
+        memory: "{{ memoryLimit }}"
+      requests:
+        cpu: "{{ cpuRequest }}"
+        memory: "{{ memoryRequest }}"

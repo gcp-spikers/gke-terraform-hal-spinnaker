@@ -1,0 +1,321 @@
+schema: "1"
+id: deployToProd
+metadata:
+  description: Deploys an image from test environment into production
+  name: Deploys an image from test environment into production
+  owner: pipelineservice@ea.anz.com
+  scopes:
+  - global
+protect: false
+variables:
+- name: canary
+  type: Object
+  example: |
+    canary:
+      pipeline: "Deploy to Dev"
+      cluster: "test-dev"
+      account: "my-k8s-account"
+      namespace: "default"
+
+- name: prod
+  type: Object
+  example: |
+    prod:
+      cluster: "test-prod"
+      account: "my-k8s-account"
+      namespace: "default"
+      probePath: "/actuator/health"
+      loadBalancers:
+      - test-prod
+
+- name: canaryConfig
+  type: Object
+  example: |
+    canaryConfig:
+      beginInterval: 1
+      analysisInterval: 5
+      duration: 10
+      configId: aaaa-aaaa-aaa-aaa
+      metricsAccount: my-google-account
+      storageAccount: my-google-account
+
+configuration:
+  concurrentExecutions:
+    limitConcurrent: true
+    parallel: true
+  triggers:
+  - application: "{{ application }}"
+    enabled: true
+    name: "{{ canary.pipeline }}"
+    pipeline: "{{ canary.pipeline }}"
+    status:
+    - successful
+    type: pipeline
+
+stages:
+# Find canary image from test cluster
+- id: findCanaryImage
+  type: findImage
+  name: "Find Canary Image"
+  config:
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    cluster: "{{canary.cluster}}"
+    credentials: "{{canary.account}}"
+    imageNamePattern: .*
+    namespaces:
+    - "{{canary.namespace}}"
+    onlyEnabled: true
+    selectionStrategy: NEWEST
+
+# Find prod image from prod cluster
+- id: findBaselineImage
+  type: findImage
+  name: "Find Baseline Image"
+  config:
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    cluster: "{{prod.cluster}}"
+    completeOtherBranchesThenFail: false
+    continuePipeline: true
+    credentials: "{{prod.account}}"
+    failPipeline: false
+    namespaces:
+    - "{{prod.namespace}}"
+    onlyEnabled: true
+    selectionStrategy: NEWEST
+
+# Deploy the canary image to prod-canary cluster
+- id: deployCanary
+  type: deploy
+  name: "Deploy Canary Image"
+  config:
+    clusters: |
+      {% if true %}
+      - {% module  deployFindImageToCluster
+          account=prod.account,
+          namespace=prod.namespace,
+          port=8080,
+          loadBalancers=prod.loadBalancers,
+          stack="prod",
+          detail="canary",
+          probePath=prod.probePath,
+          findImageCluster=canary.cluster,
+          findImageStage="Find Canary Image",
+          findImageStageId="findCanaryImage"
+          %}
+      {% endif %}
+    stageEnabled:
+      expression: "${ #stage( 'Find Baseline Image' )[ 'status' ].toString() == 'SUCCEEDED' }"
+      type: expression
+  dependsOn:
+  - findCanaryImage
+
+# Deploy the baseline image to prod-baseline cluster
+- id: deployBaseline
+  type: deploy
+  name: "Deploy Baseline Image"
+  config:
+    clusters: |
+      {% if true %}
+      - {% module  deployFindImageToCluster
+          account=prod.account,
+          namespace=prod.namespace,
+          port=8080,
+          loadBalancers=prod.loadBalancers,
+          stack="prod",
+          detail="baseline",
+          probePath=prod.probePath,
+          findImageCluster=canary.cluster,
+          findImageStage="Find Baseline Image",
+          findImageStageId="findBaselineImage"
+          %}
+      {% endif %}
+    stageEnabled:
+      expression: "${ #stage( 'Find Baseline Image' )[ 'status' ].toString() == 'SUCCEEDED' }"
+      type: expression
+  dependsOn:
+  - findBaselineImage
+
+# Perform canary analysis
+- id: canaryAnalysis
+  type: kayentaCanary
+  name: Canary Analysis
+  config:
+    analysisType: realTime
+    canaryConfig:
+      beginCanaryAnalysisAfterMins: "{{ canaryConfig.beginInterval }}"
+      canaryAnalysisIntervalMins: "{{ canaryConfig.analysisInterval }}"
+      canaryConfigId: "{{ canaryConfig.configId }}"
+      combinedCanaryResultStrategy: LOWEST
+      lifetimeDuration: "PT0H{{ canaryConfig.duration }}M"
+      metricsAccountName: "{{ canaryConfig.metricsAccount }}"
+      scopes:
+      - controlLocation: "{{ prod.namespace }}"
+        controlScope: "{{application}}-prod-baseline"
+        experimentLocation:  "{{ prod.namespace }}"
+        experimentScope: "{{application}}-prod-canary"
+        extendedScopeParams:
+          resourceType: k8s_container
+        scopeName: default
+        step: 60
+      scoreThresholds:
+        marginal: "20"
+        pass: "75"
+      storageAccountName: "{{ canaryConfig.storageAccount }}"
+    stageEnabled:
+      expression: "${ #stage( 'Find Baseline Image' )[ 'status' ].toString() == 'SUCCEEDED' }"
+      type: expression
+  dependsOn:
+  - deployBaseline
+  - deployCanary
+
+# Deploy to production
+- id: deployProd
+  type: deploy
+  name: "Deploy to Prod"
+  config:
+    clusters: |
+      {% if true %}
+      - {% module  deployFindImageToCluster
+          account=prod.account,
+          namespace=prod.namespace,
+          port=8080,
+          loadBalancers=prod.loadBalancers,
+          stack="prod",
+          probePath=prod.probePath,
+          findImageCluster=canary.cluster,
+          findImageStage="Find Canary Image"
+          findImageStageId="findCanaryImage"
+          %}
+      {% endif %}
+  dependsOn:
+  - canaryAnalysis
+
+
+modules:
+- id: deployFindImageToCluster
+  variables:
+  - name: account
+    type: String
+
+  - name: namespace
+    type: String
+
+  - name: size
+    type: int
+    defaultValue: 1
+
+  - name: port
+    type: int
+    defaultValue: 8080
+
+  - name: loadBalancers
+    type: list
+
+  - name: strategy
+    type: String
+    defaultValue: ""
+
+  - name: stack
+    type: String
+    defaultValue: ""
+
+  - name: detail
+    type: String
+    defaultValue: ""
+
+  - name: cpuRequest
+    type: String
+    defaultValue: 250m
+
+  - name: cpuLimit
+    type: String
+    defaultValue: 500m
+
+  - name: memoryRequest
+    type: String
+    defaultValue: 256Mi
+
+  - name: memoryLimit
+    type: String
+    defaultValue: 512Mi
+
+  - name: findImageStageId
+    type: String
+
+  - name: findImageStage
+    type: String
+
+  - name: findImageCluster
+    type: String
+
+  - name: probePath
+    type: String
+
+  definition:
+    account: "{{ account }}"
+    application: "{{ application }}"
+    cloudProvider: kubernetes
+    namespace: "{{ namespace }}"
+    provider: kubernetes
+    region: "{{ namespace }}"
+    stack: "{{ stack }}"
+    freeFormDetails: "{{detail}}"
+    strategy: "{{ strategy }}"
+    targetSize: "{{ size }}"
+    terminationGracePeriodSeconds: 30
+    loadBalancers: |
+      {% for lb in loadBalancers %}
+      - {{ lb }}
+      {% endfor %}
+    containers:
+    - name: "{{ application }}"
+      envVars:
+      - name: TAG
+        value: "${ #stage( '{{ findImageStage }}' )['outputs']['deploymentDetails'][0]['tag'] }"
+      imageDescription:
+        cluster: "{{findImageCluster}}"
+        fromContext: true
+        imageId: "{{findImageCluster}} .*"
+        repository: "{{findImageStage}}"
+        pattern: ".*"
+        stageId: "{{ findImageStageId }}"
+      imagePullPolicy: IFNOTPRESENT
+      livenessProbe: |
+        {% if probePath %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probePath }}"
+            port: "{{ port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      readinessProbe: |
+        {% if probePath %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probePath }}"
+            port: "{{ port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      ports:
+      - containerPort: "{{ port }}"
+        protocol: TCP
+      limits:
+        cpu: "{{ cpuLimit }}"
+        memory: "{{ memoryLimit }}"
+      requests:
+        cpu: "{{ cpuRequest }}"
+        memory: "{{ memoryRequest }}"

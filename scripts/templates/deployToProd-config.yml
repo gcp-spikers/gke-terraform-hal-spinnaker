@@ -1,0 +1,28 @@
+schema: "1"
+pipeline:
+  application: test
+  name: Deploy to Prod
+  template:
+    source: spinnaker://deployToProd
+  variables:
+    canary:
+      pipeline: "2bf51d1b-8ddb-431e-87c4-ddff3bd73224"
+      cluster: "test-dev"
+      account: "my-k8s-account"
+      namespace: "default"
+    prod:
+      cluster: "test-prod"
+      account: "my-k8s-account"
+      namespace: "default"
+      probePath: "/actuator/health"
+      loadBalancers:
+      - test-prod
+    canaryConfig:
+      beginInterval: 1
+      analysisInterval: 5
+      duration: 10
+      configId: "fd91da95-cf43-4838-b1d8-b531290bdd35"
+      metricsAccount: my-google-account
+      storageAccount: my-google-account
+configuration:
+  inherit: [ "concurrentExecutions", "triggers" ]
