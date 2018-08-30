@@ -1,0 +1,176 @@
+schema: "1"
+id: common-modules
+metadata:
+  description: Common modules are defined herre
+  name: Common Modules
+  owner: pipelineservice@ea.anz.com
+  scopes:
+  - global
+
+modules:
+- id: deployCluster
+  variables:
+  - name: account
+    type: String
+
+  - name: namespace
+    type: String
+
+  - name: loadBalancers
+    type: list
+
+  - name: size
+    type: int
+    defaultValue: 1
+
+  - name: port
+    type: int
+    defaultValue: 8080
+
+  - name: probePath
+    type: String
+    defaultValue: ""
+
+  - name: cpuRequest
+    type: String
+    defaultValue: 250m
+
+  - name: cpuLimit
+    type: String
+    defaultValue: 500m
+
+  - name: memoryRequest
+    type: String
+    defaultValue: 256Mi
+
+  - name: memoryLimit
+    type: String
+    defaultValue: 512Mi
+
+  - name: strategy
+    type: String
+    defaultValue: ""
+
+  - name: stack
+    type: String
+    defaultValue: ""
+
+  - name: detail
+    type: String
+    defaultValue: ""
+
+  - name: findImageStageId
+    type: String
+    defaultValue: ""
+
+  - name: findImageStage
+    type: String
+    defaultValue: ""
+
+  - name: findImageCluster
+    type: String
+    defaultValue: ""
+
+  - name: imageAccount
+    type: String
+    defaultValue: ""
+
+  - name: imageRegistry
+    type: String
+    defaultValue: ""
+
+  - name: imageOrg
+    type: String
+    defaultValue: ""
+
+  - name: imageName
+    type: String
+    defaultValue: ""
+
+  definition:
+    account: "{{ account }}"
+    application: "{{ application }}"
+    namespace: "{{ namespace }}"
+    region: "{{ namespace }}"
+    stack: "{{ stack }}"
+    freeFormDetails: "{{detail}}"
+    targetSize: "{{ size }}"
+    strategy: "{{ strategy }}"
+    maxRemainingAsgs: 2
+    rollback:
+      onFailure: true
+    scaleDown: false
+    dnsPolicy: ClusterFirst
+    terminationGracePeriodSeconds: 30
+    cloudProvider: kubernetes
+    provider: kubernetes
+    interestingHealthProviderNames:
+    - KubernetesContainer
+    - KubernetesPod
+    loadBalancers: |
+      {% for lb in loadBalancers %}
+      - {{ lb }}
+      {% endfor %}
+    containers:
+    - name: "{{ application }}"
+      envVars:
+      - name: TAG
+        value: |
+          {% if findImageStage %}
+            ${ #stage( '{{ findImageStage }}' )['outputs']['deploymentDetails'][0]['tag'] }
+          {% else %}
+            ${trigger['tag']}
+          {% endif %}
+      imageDescription: |
+        {% if findImageStage %}
+        cluster: "{{findImageCluster}}"
+        fromContext: true
+        imageId: "{{findImageStage}}:undefined"
+        repository: "{{findImageStage}}"
+        pattern: .*
+        stageId: "{{ findImageStageId }}"
+        {% else %}
+        account: "{{ imageAccount }}"
+        fromTrigger: true
+        imageId: "{{ imageRegistry }}/{{ imageOrg }}/{{ imageName }}"
+        registry: "{{ imageRegistry }}"
+        repository: "{{ imageOrg }}/{{ imageName }}"
+        {% endif %}
+      livenessProbe: |
+        {% if probePath %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probePath }}"
+            port: "{{ port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 180
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      readinessProbe: |
+        {% if probePath %}
+        failureThreshold: 3
+        handler:
+          httpGetAction:
+            path: "{{ probePath }}"
+            port: "{{ port }}"
+            uriScheme: HTTP
+          type: HTTP
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+        {% endif %}
+      imagePullPolicy: IFNOTPRESENT
+      ports:
+      - containerPort: "{{ port }}"
+        protocol: TCP
+      limits:
+        cpu: "{{ cpuLimit }}"
+        memory: "{{ memoryLimit }}"
+      requests:
+        cpu: "{{ cpuRequest }}"
+        memory: "{{ memoryRequest }}"

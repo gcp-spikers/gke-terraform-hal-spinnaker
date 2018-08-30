@@ -35,14 +35,16 @@ stages:
   name: Destroy Baseline
   type: destroyServerGroup
   config:
-    cloudProvider: kubernetes
-    cloudProviderType: kubernetes
     cluster: "{{ application }}-prod-baseline"
+    credentials: "{{account}}"
     completeOtherBranchesThenFail: false
     continuePipeline: true
-    credentials: "{{account}}"
     failPipeline: false
     target: "current_asg_dynamic"
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    interestingHealthProviderNames:
+    - KubernetesService
     namespaces:
     - "{{namespace}}"
 
@@ -50,13 +52,15 @@ stages:
   name: Destroy Canary
   type: destroyServerGroup
   config:
-    cloudProvider: kubernetes
-    cloudProviderType: kubernetes
     cluster: "{{ application }}-prod-canary"
+    credentials: "{{account}}"
     completeOtherBranchesThenFail: false
     continuePipeline: true
-    credentials: "{{account}}"
     failPipeline: false
     target: "current_asg_dynamic"
+    cloudProvider: kubernetes
+    cloudProviderType: kubernetes
+    interestingHealthProviderNames:
+    - KubernetesService
     namespaces:
     - "{{namespace}}"

@@ -15,12 +15,9 @@ pipeline:
       namespace: default
       size: 1
       port: 8080
+      probePath: /actuator/health
       loadBalancers:
       - <APP_NAME>-dev
-      strategy: highlander
       stack: dev
-      probe:
-        path: /actuator/health
-        port: 8080
 configuration:
   inherit: [ "concurrentExecutions", "triggers" ]

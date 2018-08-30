@@ -7,6 +7,7 @@ metadata:
   scopes:
     - global
 protect: false
+source: spinnaker://common-modules
 variables:
 - name: image
   type: Object
@@ -30,126 +31,17 @@ stages:
   config:
     clusters: |
       {% if cluster %}
-      - {% module  deployTriggerImageToCluster
+      - {% module  deployCluster
           account=cluster.account,
           namespace=cluster.namespace,
           size=cluster.size,
           port=cluster.port,
           loadBalancers=cluster.loadBalancers,
-          strategy=cluster.strategy,
+          strategy="highlander",
           stack=cluster.stack,
-          image=image,
-          probe=cluster.probe %}
+          probePath=cluster.probePath,
+          imageAccount=image.account,
+          imageOrg=image.organization,
+          imageRegistry=image.registry,
+          imageName=image.name%}
       {% endif %}
-
-modules:
-- id: deployTriggerImageToCluster
-  variables:
-  - name: account
-    type: String
-  - name: namespace
-    type: String
-  - name: size
-    type: int
-    defaultValue: 1
-  - name: port
-    type: int
-    defaultValue: 8080
-  - name: loadBalancers
-    type: list
-  - name: strategy
-    type: String
-    defaultValue: highlander
-  - name: stack
-    type: String
-    defaultValue: dev
-  - name: cpuRequest
-    type: String
-    defaultValue: 250m
-  - name: cpuLimit
-    type: String
-    defaultValue: 500m
-  - name: memoryRequest
-    type: String
-    defaultValue: 256Mi
-  - name: memoryLimit
-    type: String
-    defaultValue: 512Mi
-  - name: image
-    type: Object
-    example: |
-      image:
-        account: <docker-registry-account>
-        registry: gcr.io
-        organization: <project-id>
-        name: <docker-image-name>
-  - name: probe
-    type: Object
-    example: |
-      probe:
-        path: URI to be invoked for probe
-        port: 8080
-  definition:
-    account: "{{ account }}"
-    application: "{{ application }}"
-    cloudProvider: kubernetes
-    namespace: "{{ namespace }}"
-    provider: kubernetes
-    region: "{{ namespace }}"
-    stack: "{{ stack }}"
-    strategy: "{{ strategy }}"
-    targetSize: "{{ size }}"
-    terminationGracePeriodSeconds: 30
-    loadBalancers: |
-      {% for lb in loadBalancers %}
-      - {{ lb }}
-      {% endfor %}
-    containers:
-    - name: "{{ image.name }}"
-      envVars:
-      - name: TAG
-        value: ${trigger['tag']}
-      imageDescription:
-        account: "{{ image.account }}"
-        fromTrigger: true
-        imageId: "{{ image.registry }}/{{ image.organization }}/{{ image.name }}"
-        registry: "{{ image.registry }}"
-        repository: "{{ image.organization }}/{{ image.name }}"
-      imagePullPolicy: IFNOTPRESENT
-      livenessProbe: |
-        {% if probe %}
-        failureThreshold: 3
-        handler:
-          httpGetAction:
-            path: "{{ probe.path }}"
-            port: "{{ probe.port }}"
-            uriScheme: HTTP
-          type: HTTP
-        initialDelaySeconds: 180
-        periodSeconds: 10
-        successThreshold: 1
-        timeoutSeconds: 1
-        {% endif %}
-      readinessProbe: |
-        {% if probe %}
-        failureThreshold: 3
-        handler:
-          httpGetAction:
-            path: "{{ probe.path }}"
-            port: "{{ probe.port }}"
-            uriScheme: HTTP
-          type: HTTP
-        initialDelaySeconds: 30
-        periodSeconds: 10
-        successThreshold: 1
-        timeoutSeconds: 1
-        {% endif %}
-      ports:
-      - containerPort: "{{ port }}"
-        protocol: TCP
-      limits:
-        cpu: "{{ cpuLimit }}"
-        memory: "{{ memoryLimit }}"
-      requests:
-        cpu: "{{ cpuRequest }}"
-        memory: "{{ memoryRequest }}"

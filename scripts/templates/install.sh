@@ -8,9 +8,10 @@ SPINNAKER_API=http://localhost:8084/
 CANARY_CONFIG_ID="753fbdeb-6c51-495f-98a6-17b3dcd6010f"
 
 # Install the templates 
-#roer pipeline-template publish deployToTest.yml
-#roer pipeline-template publish deployToProd.yml
-#roer pipeline-template publish cleanupCanary.yml
+roer pipeline-template publish common-modules.yml
+roer pipeline-template publish deployToTest.yml
+roer pipeline-template publish deployToProd.yml
+roer pipeline-template publish cleanupCanary.yml
 
 sed "s/<APP_NAME>/$APP_NAME/" services.yml > /tmp/$APP_NAME-services.yml
 
