@@ -27,7 +27,7 @@ variable "disk_size_gb" {
 }
 
 variable "preemptible" {
-  default     = false
+  default     = true
   description = "A boolean that represents whether or not the underlying node VMs are preemptible. See the official documentation for more information. Defaults to true."
 }
 
