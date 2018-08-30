@@ -12,6 +12,10 @@ CANARY_CONFIG_ID="753fbdeb-6c51-495f-98a6-17b3dcd6010f"
 #roer pipeline-template publish deployToProd.yml
 #roer pipeline-template publish cleanupCanary.yml
 
+sed "s/<APP_NAME>/$APP_NAME/" services.yml > /tmp/$APP_NAME-services.yml
+
+kubectl apply -f /tmp/$APP_NAME-services.yml
+
 roer app  create $APP_NAME app.yml
 
 sed "s/<APP_NAME>/$APP_NAME/" deployToTest-config.yml > /tmp/$APP_NAME-deployToTest-config.yml
