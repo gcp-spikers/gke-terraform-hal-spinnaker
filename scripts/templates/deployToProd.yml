@@ -1,8 +1,8 @@
 schema: "1"
 id: deployToProd
 metadata:
-  description: Deploys an image from test environment into production
-  name: Deploys an image from test environment into production
+  description: Deploys an image from demo-service1 environment into production
+  name: Deploys an image from demo-service1 environment into production
   owner: pipelineservice@ea.anz.com
   scopes:
   - global
@@ -14,7 +14,7 @@ variables:
   example: |
     canary:
       pipelineId: "Deploy to Dev"
-      cluster: "test-dev"
+      cluster: "demo-service1-dev"
       account: "my-k8s-account"
       namespace: "default"
 
@@ -22,12 +22,12 @@ variables:
   type: Object
   example: |
     prod:
-      cluster: "test-prod"
+      cluster: "demo-service1-prod"
       account: "my-k8s-account"
       namespace: "default"
       probePath: "/actuator/health"
       loadBalancers:
-      - test-prod
+      - demo-service1-prod
 
 - name: canaryConfig
   type: Object

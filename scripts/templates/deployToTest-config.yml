@@ -1,6 +1,6 @@
 schema: "1"
 pipeline:
-  application: test
+  application: <APP_NAME>
   name: Deploy to Dev
   template:
     source: spinnaker://deployToTest
@@ -16,7 +16,7 @@ pipeline:
       size: 1
       port: 8080
       loadBalancers:
-      - test-dev
+      - <APP_NAME>-dev
       strategy: highlander
       stack: dev
       probe:

@@ -1,27 +1,27 @@
 schema: "1"
 pipeline:
-  application: test
+  application: <APP_NAME>
   name: Deploy to Prod
   template:
     source: spinnaker://deployToProd
   variables:
     canary:
-      pipelineId: "e8f7656d-dfe0-468b-8748-6198b3ecf929"
-      cluster: "test-dev"
+      pipelineId: "<TEST_DEPLOY_PIPELINE_ID>"
+      cluster: "<APP_NAME>-dev"
       account: "my-k8s-account"
       namespace: "default"
     prod:
-      cluster: "test-prod"
+      cluster: "<APP_NAME>-prod"
       account: "my-k8s-account"
       namespace: "default"
       probePath: "/actuator/health"
       loadBalancers:
-      - test-prod
+      - <APP_NAME>-prod
     canaryConfig:
       beginInterval: 1
       analysisInterval: 5
       duration: 10
-      configId: "fd91da95-cf43-4838-b1d8-b531290bdd35"
+      configId: "<CANARY_CONFIG_ID>"
       metricsAccount: my-google-account
       storageAccount: my-google-account
 configuration:
