@@ -105,11 +105,7 @@ stages:
           findImageStageId="findCanaryImage"
           %}
       {% endif %}
-    stageEnabled:
-      expression: "${ #stage( 'Find Baseline Image' )[ 'status' ].toString() == 'SUCCEEDED' }"
-      type: expression
   dependsOn:
-  - findBaselineImage
   - findCanaryImage
 
 # Deploy the baseline image to prod-baseline cluster
