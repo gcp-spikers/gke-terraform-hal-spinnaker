@@ -86,7 +86,6 @@ stages:
           stack="prod",
           detail="baseline",
           probePath=prod.probePath,
-          findImageCluster=canary.cluster,
           findImageStage="Find Baseline Image",
           findImageStageId="findBaselineImage"
           %}
@@ -96,6 +95,19 @@ stages:
       type: expression
   dependsOn:
   - findBaselineImage
+
+# Wait stage as workaround for spinnaker bug
+# https://github.com/spinnaker/spinnaker/issues/1523
+# https://github.com/spinnaker/spinnaker/issues/1724
+- id: wait
+  type: wait
+  name: "Wait"
+  comments: |
+    Wait stage as workaround for spinnaker bug
+    https://github.com/spinnaker/spinnaker/issues/1523
+    https://github.com/spinnaker/spinnaker/issues/1724
+  config:
+    waitTime: 5
 
 # Find canary image from test cluster
 - id: findCanaryImage
@@ -112,7 +124,7 @@ stages:
     onlyEnabled: true
     selectionStrategy: NEWEST
   dependsOn:
-  - findBaselineImage
+  - wait
 
 # Deploy the canary image to prod-canary cluster
 - id: deployCanary
@@ -129,7 +141,6 @@ stages:
           stack="prod",
           detail="canary",
           probePath=prod.probePath,
-          findImageCluster=canary.cluster,
           findImageStage="Find Canary Image",
           findImageStageId="findCanaryImage"
           %}
@@ -170,7 +181,6 @@ stages:
       expression: "${ #stage( 'Find Baseline Image' )[ 'status' ].toString() == 'SUCCEEDED' }"
       type: expression
   dependsOn:
-  - deployBaseline
   - deployCanary
 
 # Deploy to production
@@ -186,8 +196,8 @@ stages:
           port=8080,
           loadBalancers=prod.loadBalancers,
           stack="prod",
+          strategy="redblack",
           probePath=prod.probePath,
-          findImageCluster=canary.cluster,
           findImageStage="Find Canary Image",
           findImageStageId="findCanaryImage"
           %}

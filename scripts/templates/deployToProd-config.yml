@@ -20,7 +20,7 @@ pipeline:
     canaryConfig:
       beginInterval: 1
       analysisInterval: 5
-      duration: 10
+      duration: 5
       configId: "<CANARY_CONFIG_ID>"
       metricsAccount: my-google-account
       storageAccount: my-google-account

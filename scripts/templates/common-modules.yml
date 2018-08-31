@@ -59,15 +59,11 @@ modules:
     type: String
     defaultValue: ""
 
-  - name: findImageStageId
-    type: String
-    defaultValue: ""
-
   - name: findImageStage
     type: String
     defaultValue: ""
 
-  - name: findImageCluster
+  - name: findImageStageId
     type: String
     defaultValue: ""
 
@@ -122,12 +118,8 @@ modules:
             ${trigger['tag']}
           {% endif %}
       imageDescription: |
-        {% if findImageStage %}
-        cluster: "{{findImageCluster}}"
+        {% if findImageStageId %}
         fromContext: true
-        imageId: "{{findImageStage}}:undefined"
-        repository: "{{findImageStage}}"
-        pattern: .*
         stageId: "{{ findImageStageId }}"
         {% else %}
         account: "{{ imageAccount }}"
