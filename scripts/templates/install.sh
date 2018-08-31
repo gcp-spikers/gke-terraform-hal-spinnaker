@@ -17,7 +17,12 @@ sed "s/<APP_NAME>/$APP_NAME/" services.yml > /tmp/$APP_NAME-services.yml
 
 kubectl apply -f /tmp/$APP_NAME-services.yml
 
-roer app  create $APP_NAME app.yml
+cat app.yml | \
+  yq w - attributes.updateTs $(date +%s000)  | \
+  yq w - attributes.createTs $(date +%s000)  \
+  > /tmp/$APP_NAME.yml
+
+roer app  create $APP_NAME /tmp/$APP_NAME.yml
 
 sed "s/<APP_NAME>/$APP_NAME/" deployToTest-config.yml > /tmp/$APP_NAME-deployToTest-config.yml
 roer pipeline save  /tmp/$APP_NAME-deployToTest-config.yml

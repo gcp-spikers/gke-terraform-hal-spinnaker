@@ -1,3 +1,4 @@
+email: "fake@spinnaker.io"
 attributes:
   accounts: my-k8s-account
   email: "fake@spinnaker.io"
@@ -11,4 +12,5 @@ attributes:
   - account: my-k8s-account
     location: default
     stack: prod
-email: "fake@spinnaker.io"
+  createTs: "1535624654142"
+  updateTs: "1535624654142"
